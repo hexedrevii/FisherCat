@@ -4,6 +4,13 @@ import os
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from services.db import db_service
+
+import sqlite3
+
+
+# Set to True to drop all tables and reinitialize the database on startup.
+DELETE_DEFAULTS: bool = True
 
 load_dotenv()
 TOKEN = os.environ['FISHER_TOKEN']
@@ -15,9 +22,32 @@ class fisher_bot(commands.Bot):
 
     super().__init__(command_prefix='!', intents=intents)
 
+    print("Connecting to database.")
+    self.connection = sqlite3.connect(os.environ['FISHER_DATABASE'])
+
+    if DELETE_DEFAULTS:
+      from services.db_init import drop_tables, initialize_database
+
+      if drop_tables(self.connection):
+        print("Dropped existing tables.")
+
+      if initialize_database(self.connection):
+        print("Initialized database.")
+
+    self.db = db_service(self.connection)
+
+
   async def on_ready(self):
     print(f'Logged in as {self.user.name} - {self.user.id}')
 
+
+  async def on_message(self, message):
+    if message.author.bot:
+      return
+
+    # Make sure the guild is enrolled.
+    if message.guild:
+      self.db.enroll_guild(message.guild.id)
 
   async def setup_hook(self):
     for root, dirs, files in os.walk('commands'):
