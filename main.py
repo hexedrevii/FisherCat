@@ -13,7 +13,7 @@ import sqlite3
 DELETE_DEFAULTS: bool = True
 
 load_dotenv()
-TOKEN = os.environ['FISHER_TOKEN']
+TOKEN: str = os.environ['FISHER_TOKEN']
 
 class fisher_bot(commands.Bot):
   def __init__(self):
@@ -41,13 +41,14 @@ class fisher_bot(commands.Bot):
     print(f'Logged in as {self.user.name} - {self.user.id}')
 
 
-  async def on_message(self, message):
+  async def on_message(self, message: discord.Message):
     if message.author.bot:
       return
 
     # Make sure the guild is enrolled.
     if message.guild:
       self.db.enroll_guild(message.guild.id)
+
 
   async def setup_hook(self):
     for root, dirs, files in os.walk('commands'):
@@ -72,5 +73,5 @@ class fisher_bot(commands.Bot):
       print(f"Failed to sync commands: {e}")
 
 
-client: fisher_bot = fisher_bot()
+client = fisher_bot()
 client.run(TOKEN)
