@@ -9,7 +9,7 @@ from services.fish_service import FishService
 from util.weighted_random import WeightedRandom
 
 
-def drop_tables(conn: sqlite3.Connection):
+def drop_tables(conn: sqlite3.Connection) -> bool:
   '''
     Drops all tables in the database. This is ONLY meant for the development branch, and should not be called in production.
   '''
@@ -34,7 +34,7 @@ def drop_tables(conn: sqlite3.Connection):
     return False
 
 
-def initialize_database(conn: sqlite3.Connection):
+def initialize_database(conn: sqlite3.Connection) -> bool:
   if not conn:
     print("ERROR: No connection provided.", file=sys.stderr)
     return False
@@ -158,4 +158,49 @@ def import_fish(conn: sqlite3.Connection, fish_service: FishService):
     return False
   except KeyError as e:
     print(f"JSON Data Error: Missing key {e}", file=sys.stderr)
+    return False
+
+
+def load_existing_fish(conn: sqlite3.Connection, fish_service: FishService) -> bool:
+  if not conn:
+    print("ERROR: No connection provided.", file=sys.stderr)
+    return False
+
+  cursor = conn.cursor()
+
+  try:
+    cursor.execute("SELECT id, name, rarity, odds, area, base_value FROM fish")
+    rows = cursor.fetchall()
+
+    count = 0
+    for row in rows:
+      db_id, name, rarity_str, odds, area_str, base_value = row
+
+      fish = Fish(
+        id=db_id,
+        name=name,
+        rarity=Rarity[rarity_str],
+        odds=odds,
+        area=Area[area_str],
+        base_value=base_value
+      )
+
+      fish_service.fish.append(fish)
+
+      if hasattr(fish_service, fish.area.name):
+        fish_area: WeightedRandom = getattr(fish_service, fish.area.name)
+        fish_area.add(fish, 1 / fish.odds)
+      else:
+        print(f"Warning: FishService missing area attribute '{fish.area.name}'")
+
+      count += 1
+
+    print(f"Successfully loaded {count} fish from database into memory.")
+    return True
+
+  except sqlite3.Error as e:
+    print(f"Database error during load: {e}", file=sys.stderr)
+    return False
+  except KeyError as e:
+    print(f"Enum Conversion Error: Database contains invalid key {e}", file=sys.stderr)
     return False

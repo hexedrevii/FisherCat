@@ -35,7 +35,7 @@ class Fishing(commands.Cog):
 
         # Check if cooldown is gone.
         if datetime.datetime.now() < stamp + datetime.timedelta(seconds=user.fishing_cooldown):
-          await interaction.response.send_message(f"You are still recovering from your last fishing trip! Please wait {user.fishing_cooldown}s before going fishing again.")
+          await interaction.response.send_message(f"You are still recovering from your last fishing trip! Please wait {user.fishing_cooldown}s before going fishing again.", ephemeral=True)
           return
         else:
           self.user_cooldowns.remove((id, stamp))
@@ -59,13 +59,19 @@ class Fishing(commands.Cog):
     summary_parts = []
     for (fish_id, fish_name), count in ordered_fish_count.items():
       summary_parts.append(f"{count}x {fish_name}")
-      print(fish_id)
-      print(fish_name)
       self.bot.db.add_fish(guildid, memberid, fish_id, count)
 
-    summary = ", ".join(summary_parts)
+    summary = "\n".join(summary_parts)
 
-    await interaction.response.send_message(f"You went fishing in the {area.name} and caught: {summary}")
+    summary_embed = discord.Embed(
+      colour=discord.Colour.blue(),
+      title=f"You cast your line into the {area.name}...",
+      description=f"You caught:\n{summary}"
+    )
+    summary_embed.timestamp = datetime.datetime.now()
+    summary_embed.set_footer(text=f"Requested by {interaction.user.name}", icon_url=interaction.user.display_avatar.url)
+
+    await interaction.response.send_message(embed=summary_embed)
 
 
 async def setup(bot: commands.Bot):
