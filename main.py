@@ -4,9 +4,13 @@ import os
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from services.db import db_service
+from services.db import DbService
+
+from models.fuser import FUser
 
 import sqlite3
+
+from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
@@ -15,18 +19,21 @@ DELETE_DEFAULTS: bool = True
 load_dotenv()
 TOKEN: str = os.environ['FISHER_TOKEN']
 
-class fisher_bot(commands.Bot):
+class FisherBot(commands.Bot):
   def __init__(self):
     intents = discord.Intents.default()
     intents.message_content = True
 
     super().__init__(command_prefix='!', intents=intents)
 
+    self.fish_service = FishService()
+
     print("Connecting to database.")
     self.connection = sqlite3.connect(os.environ['FISHER_DATABASE'])
+    self.connection.row_factory = sqlite3.Row
 
     if DELETE_DEFAULTS:
-      from services.db_init import drop_tables, initialize_database
+      from services.db_init import drop_tables, initialize_database, import_fish
 
       if drop_tables(self.connection):
         print("Dropped existing tables.")
@@ -34,7 +41,10 @@ class fisher_bot(commands.Bot):
       if initialize_database(self.connection):
         print("Initialized database.")
 
-    self.db = db_service(self.connection)
+
+      import_fish(self.connection, self.fish_service)
+
+    self.db = DbService(self.connection)
 
 
   async def on_ready(self):
@@ -42,12 +52,12 @@ class fisher_bot(commands.Bot):
 
 
   async def on_message(self, message: discord.Message):
-    if message.author.bot:
-      return
+    if message.author.bot: return
+    if not message.guild: return
 
-    # Make sure the guild is enrolled.
-    if message.guild:
-      self.db.enroll_guild(message.guild.id)
+    self.db.ensure_guild(message.guild.id)
+
+    user: FUser = self.db.ensure_user(message.author.id, message.guild.id)
 
 
   async def setup_hook(self):
@@ -73,5 +83,5 @@ class fisher_bot(commands.Bot):
       print(f"Failed to sync commands: {e}")
 
 
-client = fisher_bot()
+client = FisherBot()
 client.run(TOKEN)

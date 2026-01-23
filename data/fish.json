@@ -1,0 +1,24 @@
+{
+  "fish_data": [
+    {"name": "bass",
+      "rarity": "common",
+      "odds": 2,
+      "area": "lake",
+      "base_value": 10
+    },
+
+    {"name": "salmon",
+      "rarity": "common",
+      "odds": 5,
+      "area": "lake",
+      "base_value": 15
+    },
+
+    {"name": "tuna",
+      "rarity": "common",
+      "odds": 7,
+      "area": "lake",
+      "base_value": 20
+    }
+  ]
+}
