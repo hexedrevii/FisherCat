@@ -86,3 +86,28 @@ class DbService:
       self.connection.commit()
     except Exception as e:
        print(f"Error adding fish {fish_id} to member {member_id} in guild {guild_id}: {e}")
+
+
+  def update_user(self, guild_id: int, member_id: int, user: FUser):
+    try:
+      cursor = self.connection.cursor()
+
+      cursor.execute('''
+        UPDATE guildmember
+        SET
+          coins = ?,
+
+          xp = ?,
+          xpstep = ?,
+          xpnext = ?,
+
+          level = ?,
+          lastclaimed = ?,
+
+          fishingcooldown = ?
+        WHERE guildid = ? AND memberid = ?;
+      ''', (user.coins, user.xp, user.xp_step, user.xp_next, user.level, str(user.lastclaimed), user.fishing_cooldown, guild_id, member_id))
+
+      self.connection.commit()
+    except Exception as e:
+      print(f"Error updating user: {e}")

@@ -1,4 +1,4 @@
-import traceback
+import datetime
 import discord
 import os
 
@@ -28,6 +28,9 @@ class FisherBot(commands.Bot):
     super().__init__(command_prefix='!', intents=intents)
 
     self.fish_service = FishService()
+
+    self.message_cooldowns = []
+    self.message_cooldown_time = 2
 
     print("Connecting to database.")
     self.connection = sqlite3.connect(os.environ['FISHER_DATABASE'])
@@ -65,6 +68,25 @@ class FisherBot(commands.Bot):
     self.db.ensure_guild(message.guild.id)
 
     user: FUser = self.db.ensure_user(message.author.id, message.guild.id)
+
+    user_found = False
+    for (id, stamp) in self.message_cooldowns:
+      if id == message.author.id:
+        user_found = True
+        if datetime.datetime.now() < stamp + datetime.timedelta(seconds=self.message_cooldown_time):
+          return # User is on cooldown
+        else:
+          user_found = False
+          self.message_cooldowns.remove((id, stamp))
+          break
+
+    if not user_found:
+      self.message_cooldowns.append((message.author.id, datetime.datetime.now()))
+
+    user.xp += user.xp_step
+    # TODO: Handle leveling up
+
+    self.db.update_user(message.guild.id, message.author.id, user)
 
 
   async def setup_hook(self):
