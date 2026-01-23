@@ -5,6 +5,9 @@ import discord
 
 import random
 
+from datetime import datetime
+import datetime
+
 from models.area import Area
 from models.fish import Fish
 from util.weighted_random import WeightedRandom
@@ -14,6 +17,8 @@ class Fishing(commands.Cog):
   def __init__(self, bot: commands.Bot):
     self.bot = bot
 
+    self.user_cooldowns = []
+
 
   @app_commands.command(name="fish", description="Go fishing to catch some fish!")
   async def fish(self, interaction: discord.Interaction, area: Area):
@@ -21,7 +26,24 @@ class Fishing(commands.Cog):
     memberid: int = interaction.user.id
 
     self.bot.db.ensure_guild(guildid)
-    self.bot.db.ensure_user(memberid, guildid)
+    user = self.bot.db.ensure_user(memberid, guildid)
+
+    user_found = False
+    for (id, stamp) in self.user_cooldowns:
+      if id == memberid:
+        user_found = True
+
+        # Check if cooldown is gone.
+        if datetime.datetime.now() < stamp + datetime.timedelta(seconds=user.fishing_cooldown):
+          await interaction.response.send_message(f"You are still recovering from your last fishing trip! Please wait {user.fishing_cooldown}s before going fishing again.")
+          return
+        else:
+          self.user_cooldowns.remove((id, stamp))
+          user_found = False
+          break
+
+    if not user_found:
+      self.user_cooldowns.append((memberid, datetime.datetime.now()))
 
     caught_fish: list[Fish] = []
     fish: WeightedRandom = getattr(self.bot.fish_service, area.name)
