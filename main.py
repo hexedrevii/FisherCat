@@ -1,3 +1,4 @@
+import traceback
 import discord
 import os
 
@@ -14,7 +15,7 @@ from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
-DELETE_DEFAULTS: bool = True
+DELETE_DEFAULTS: bool = False
 
 load_dotenv()
 TOKEN: str = os.environ['FISHER_TOKEN']
@@ -37,12 +38,18 @@ class FisherBot(commands.Bot):
 
       if drop_tables(self.connection):
         print("Dropped existing tables.")
+      else:
+        os.exit(1)
 
       if initialize_database(self.connection):
         print("Initialized database.")
+      else:
+        os.exit(1)
 
-
-      import_fish(self.connection, self.fish_service)
+      if not import_fish(self.connection, self.fish_service): os.exit(1)
+    else:
+      from services.db_init import load_existing_fish
+      if not load_existing_fish(self.connection, self.fish_service): os.exit(1)
 
     self.db = DbService(self.connection)
 
