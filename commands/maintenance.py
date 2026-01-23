@@ -4,7 +4,7 @@ from discord import app_commands
 import discord
 
 
-class maintenance(commands.Cog):
+class Maintenance(commands.Cog):
   def __init__(self, bot: commands.Bot):
     self.bot = bot
 
@@ -16,4 +16,4 @@ class maintenance(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-  await bot.add_cog(maintenance(bot))
+  await bot.add_cog(Maintenance(bot))
