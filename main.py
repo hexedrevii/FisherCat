@@ -1,6 +1,7 @@
 import datetime
 import discord
 import os
+import math
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -15,7 +16,13 @@ from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
-DELETE_DEFAULTS: bool = False
+DELETE_DEFAULTS: bool = True
+
+LEVEL_INCREASE: float = 0.15
+LEVEL_GAP: float = 2.0
+
+COIN_REWARD: int = 50
+COIN_REWARD_INCREASE: float = 12.7
 
 load_dotenv()
 TOKEN: str = os.environ['FISHER_TOKEN']
@@ -84,7 +91,24 @@ class FisherBot(commands.Bot):
       self.message_cooldowns.append((message.author.id, datetime.datetime.now()))
 
     user.xp += user.xp_step
-    # TODO: Handle leveling up
+    if user.xp >= user.xp_next:
+      total_coins = 0
+      while user.xp >= user.xp_next:
+        user.xp -= user.xp_next
+
+        user.level += 1
+
+        reward = math.floor(COIN_REWARD + (user.level * COIN_REWARD_INCREASE))
+
+        total_coins += reward
+        user.coins += reward
+
+        if user.level % 5 == 0:
+          user.xp_step += 5
+
+        user.xp_next = math.floor(math.pow(user.level / LEVEL_INCREASE, LEVEL_GAP))
+
+      await message.channel.send(f"Congrats, {message.author.mention}! You leveled up and earned {total_coins} coins!")
 
     self.db.update_user(message.guild.id, message.author.id, user)
 
