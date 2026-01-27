@@ -10,6 +10,7 @@ import datetime
 
 from models.area import Area
 from models.fish import Fish
+from models.rod import Rod
 from util.weighted_random import WeightedRandom
 
 
@@ -48,8 +49,15 @@ class Fishing(commands.Cog):
     caught_fish: list[Fish] = []
     fish: WeightedRandom = getattr(self.bot.fish_service, area.name)
 
-    fish_count = random.randint(1, 5)
+    rod: Rod = self.bot.db.get_user_rod(memberid, guildid)
+
+    fish_count = random.randint(rod.min_catch, rod.max_catch)
+    escaped = 0
     for _ in range(fish_count):
+      if random.randint(1, rod.line_break_chance) == 1:
+        escaped += 1
+        continue
+
       caught_fish.append(fish.get())
 
     caught_data = [(f.id, f.name) for f in caught_fish]
@@ -62,6 +70,8 @@ class Fishing(commands.Cog):
       self.bot.db.add_fish(guildid, memberid, fish_id, count)
 
     summary = "\n".join(summary_parts)
+    if escaped != 0:
+      summary += f"\nOops! {escaped} fish escaped!"
 
     summary_embed = discord.Embed(
       colour=discord.Colour.blue(),

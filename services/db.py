@@ -2,6 +2,8 @@ import sqlite3
 from models.fuser import FUser
 from datetime import datetime
 
+from models.rod import Rod
+
 class DbService:
   def __init__(self, connection: sqlite3.Connection):
       self.connection = connection
@@ -86,6 +88,35 @@ class DbService:
       self.connection.commit()
     except Exception as e:
        print(f"Error adding fish {fish_id} to member {member_id} in guild {guild_id}: {e}")
+
+
+  def get_user_rod(self, member_id: int, guild_id: int) -> Rod|None:
+    try:
+      cursor = self.connection.cursor()
+
+      query = """
+        SELECT
+          r.id, r.name, r.internalname, r.value, r.mincatch, r.maxcatch, r.linebreakchance
+        FROM guildmember gm
+        JOIN rod r ON gm.rodid = r.id
+        WHERE gm.memberid = ? AND gm.guildid = ?
+      """
+
+      cursor.execute(query, (member_id, guild_id))
+
+      dbrod = cursor.fetchone()
+      if dbrod is None: return None
+
+      return Rod(
+        id=dbrod['id'],
+        name=dbrod['name'], internal_name=dbrod['internalname'],
+        value=dbrod['value'],
+        min_catch=dbrod['mincatch'], max_catch=dbrod['maxcatch'],
+        line_break_chance=dbrod['linebreakchance']
+      )
+    except Exception as e:
+      print(f'Error fetching rod from user {member_id} in guild {guild_id}: {e}')
+      return None
 
 
   def update_user(self, guild_id: int, member_id: int, user: FUser):

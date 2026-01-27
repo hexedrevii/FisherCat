@@ -1,6 +1,7 @@
 import datetime
 import discord
 import os
+import sys
 import math
 
 from discord.ext import commands
@@ -44,22 +45,24 @@ class FisherBot(commands.Bot):
     self.connection.row_factory = sqlite3.Row
 
     if DELETE_DEFAULTS:
-      from services.db_init import drop_tables, initialize_database, import_fish
+      from services.db_init import drop_tables, initialize_database, import_fish, import_rods
 
       if drop_tables(self.connection):
         print("Dropped existing tables.")
       else:
-        os.exit(1)
+        sys.exit(1)
 
       if initialize_database(self.connection):
         print("Initialized database.")
       else:
-        os.exit(1)
+        sys.exit(1)
 
-      if not import_fish(self.connection, self.fish_service): os.exit(1)
+      if not import_fish(self.connection, self.fish_service): sys.exit(1)
+      if not import_rods(self.connection, self.fish_service): sys.exit(1)
     else:
-      from services.db_init import load_existing_fish
-      if not load_existing_fish(self.connection, self.fish_service): os.exit(1)
+      from services.db_init import load_existing_fish, load_existing_rods
+      if not load_existing_fish(self.connection, self.fish_service): sys.exit(1)
+      if not load_existing_rods(self.connect, self.fish_service): sys.exit(1)
 
     self.db = DbService(self.connection)
 
