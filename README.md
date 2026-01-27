@@ -28,7 +28,7 @@ Once you have that set up, and python installed WITH pip, you can run the follow
 python -m venv myenv # Create an environment to not clog your actual computer.
 
 # This step varies on OS and shell installed, if you have Windows with Powershell you can just run this.
-.\env\Scripts\Activate.ps1 # Alternatively: activate.bat if you *still* use batch.
+.\myenv\Scripts\Activate.ps1 # Alternatively: activate.bat if you *still* use batch.
 
 pip install -r requirements.txt # This installs all the required dependencies into the environment.
 
