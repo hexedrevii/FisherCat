@@ -5,6 +5,7 @@ import json
 from models.area import Area
 from models.fish import Fish
 from models.rarity import Rarity
+from models.rod import Rod
 from services.fish_service import FishService
 from util.weighted_random import WeightedRandom
 
@@ -68,9 +69,25 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
     """)
 
     cursor.execute("""
+      CREATE TABLE IF NOT EXISTS rod (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        internalname TEXT NOT NULL,
+
+        value INTEGER NOT NULL,
+
+        mincatch INTEGER NOT NULL,
+        maxcatch INTEGER NOT NULL,
+
+        linebreakchance INTEGER NOR NULL
+      );
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS guildmember (
             guildid INTEGER NOT NULL,
             memberid INTEGER NOT NULL,
+            rodid INTEGER NOT NULL DEFAULT 1,
 
             coins INTEGER DEFAULT 0,
 
@@ -85,13 +102,16 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
             fishingcooldown INTEGER DEFAULT 15,
 
             PRIMARY KEY (guildid, memberid),
+
             FOREIGN KEY (guildid) REFERENCES guild(id) ON DELETE CASCADE,
-            FOREIGN KEY (memberid) REFERENCES member(id) ON DELETE CASCADE
+            FOREIGN KEY (memberid) REFERENCES member(id) ON DELETE CASCADE,
+
+            FOREIGN KEY (rodid) REFERENCES rod(id) ON DELETE CASCADE
         );
     """)
 
     cursor.execute("""
-     CREATE TABLE IF NOT EXISTS inventory (
+      CREATE TABLE IF NOT EXISTS inventory (
           guildid INTEGER NOT NULL,
           memberid INTEGER NOT NULL,
           fishid INTEGER NOT NULL,
@@ -203,4 +223,76 @@ def load_existing_fish(conn: sqlite3.Connection, fish_service: FishService) -> b
     return False
   except KeyError as e:
     print(f"Enum Conversion Error: Database contains invalid key {e}", file=sys.stderr)
+    return False
+
+
+def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
+  if not conn:
+    print("ERROR: No connection provided.")
+    return False
+
+  try:
+    with open('./data/rods.json', 'r') as f:
+      rod_data = json.load(f)
+  except FileNotFoundError:
+    print("ERROR: rods.json not found.", file=sys.stderr)
+    return False
+
+  cursor = conn.cursor()
+
+  try:
+    for r in rod_data['rod_data']:
+      cursor.execute('''
+        INSERT INTO rod (name, internalname, value, mincatch, maxcatch, linebreakchance)
+        VALUES (?, ?, ?, ?, ?, ?)
+      ''', (r['name'], r['internal_name'], r['value'], r['min_catch'], r['max_catch'], r['line_break_chance']))
+
+      generated_id = cursor.lastrowid
+
+      fish_service.rods.append(
+        Rod(
+          id=generated_id,
+          name=r['name'], internal_name=r['internal_name'],
+          value=r['value'],
+          max_catch=r['max_catch'], min_catch=r['min_catch'],
+          line_break_chance=r['line_break_chance']
+        )
+      )
+
+    conn.commit()
+    print(f'Sucessfully imported {len(rod_data['rod_data'])} rods.')
+    return True
+  except sqlite3.Error as e:
+    print(f"Database error during load: {e}", file=sys.stderr)
+    return False
+
+
+def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
+  if not conn:
+    print('ERROR: no connection provided.', file=sys.stderr)
+    return False
+
+  cursor = conn.cursor()
+  try:
+    cursor.execute('SELECT id, name, internalname, value, mincatch, maxcatch, linebreakchance FROM rods;')
+    rows = cursor.fetchall()
+
+    count = 0
+    for row in rows:
+      db_id, name, internal_name, value, min_catch, max_catch, line_break_chance = row
+
+      fish_service.rods.append(
+        Rod(
+          id=db_id,
+          name=name, internal_name=internal_name,
+          value=value,
+          min_catch=min_catch, max_catch=max_catch,
+          line_break_chance=line_break_chance
+        )
+      )
+
+      count += 1
+
+  except sqlite3.Error as e:
+    print(f'Error importing rods: {e}')
     return False

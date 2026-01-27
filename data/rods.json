@@ -1,0 +1,14 @@
+{
+  "rod_data": [
+    {"name": "Old Faithful",
+      "internal_name": "oldfaithful",
+
+      "value": 0,
+
+      "min_catch": 1,
+      "max_catch": 5,
+
+      "line_break_chance": 5
+    }
+  ]
+}
