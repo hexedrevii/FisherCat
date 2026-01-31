@@ -16,7 +16,7 @@ from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
-DELETE_DEFAULTS: bool = False
+DELETE_DEFAULTS: bool = True
 
 LEVEL_INCREASE: float = 0.15
 LEVEL_GAP: float = 2.0
