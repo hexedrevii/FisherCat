@@ -61,13 +61,13 @@ class Fishing(commands.Cog):
 
       caught_fish.append(fish.get())
 
-    caught_data = [(f.id, f.name) for f in caught_fish]
+    caught_data = [(f.id, f.name, f.rarity) for f in caught_fish]
 
     ordered_fish_count = Counter(caught_data)
 
     summary_parts = []
-    for (fish_id, fish_name), count in ordered_fish_count.items():
-      summary_parts.append(f"{count}x {fish_name}")
+    for (fish_id, fish_name, fish_rarity), count in ordered_fish_count.items():
+      summary_parts.append(f"{count}x {fish_name} ({fish_rarity.name.title()})")
       self.bot.db.add_fish(guildid, memberid, fish_id, count)
 
     summary = "\n".join(summary_parts)
