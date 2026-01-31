@@ -131,6 +131,52 @@ class DbService:
       print(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
 
 
+  def get_user_fish(self, guild_id: int, member_id: int, fish_id: int) -> tuple[Fish, int]:
+    try:
+      cursor = self.connection.cursor()
+      cursor.execute('''
+        SELECT i.*, f.* FROM inventory i
+        INNER JOIN fish f ON i.fishid = f.id
+        WHERE i.memberid = ? AND i.guildid = ? AND i.fishid = ?;
+        ''', (member_id, guild_id, fish_id)
+      )
+
+      row = cursor.fetchone()
+      fish = Fish(
+        id=row['id'],
+        name=row['name'],
+        rarity=Rarity[row['rarity']],
+        odds=row['odds'],
+        area=Area[row['area']],
+        base_value=row['base_value']
+      )
+
+      return (fish, row['amount'])
+    except Exception as e:
+      print(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
+
+
+  def update_user_fish(self, member_id: int, guild_id: int, fish_id: int, count: int):
+    try:
+      cursor = self.connection.cursor()
+
+      if count == 0:
+        cursor.execute('''
+          DELETE FROM inventory
+          WHERE fishid = ? AND memberid = ? AND guildid = ?
+        ''', (fish_id, member_id, guild_id))
+      else:
+        cursor.execute('''
+          UPDATE inventory
+          SET amount = ?
+          WHERE fishid = ? AND memberid = ? AND guildid = ?;
+        ''', (count, fish_id, member_id, guild_id))
+
+      self.connection.commit()
+    except Exception as e:
+      print(f'Error updating fish from user {member_id} in {guild_id} for fish {fish_id}: {e}')
+
+
   def get_user_rod(self, member_id: int, guild_id: int) -> Rod|None:
     try:
       cursor = self.connection.cursor()
