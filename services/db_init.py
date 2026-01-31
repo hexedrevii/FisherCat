@@ -72,7 +72,6 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
       CREATE TABLE IF NOT EXISTS rod (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        internalname TEXT NOT NULL,
 
         value INTEGER NOT NULL,
 
@@ -243,9 +242,9 @@ def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
   try:
     for r in rod_data['rod_data']:
       cursor.execute('''
-        INSERT INTO rod (name, internalname, value, mincatch, maxcatch, linebreakchance)
-        VALUES (?, ?, ?, ?, ?, ?)
-      ''', (r['name'], r['internal_name'], r['value'], r['min_catch'], r['max_catch'], r['line_break_chance']))
+        INSERT INTO rod (name, value, mincatch, maxcatch, linebreakchance)
+        VALUES (?, ?, ?, ?, ?)
+      ''', (r['name'], r['value'], r['min_catch'], r['max_catch'], r['line_break_chance']))
 
       generated_id = cursor.lastrowid
 
@@ -274,17 +273,17 @@ def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
 
   cursor = conn.cursor()
   try:
-    cursor.execute('SELECT id, name, internalname, value, mincatch, maxcatch, linebreakchance FROM rod;')
+    cursor.execute('SELECT id, name, value, mincatch, maxcatch, linebreakchance FROM rod;')
     rows = cursor.fetchall()
 
     count = 0
     for row in rows:
-      db_id, name, internal_name, value, min_catch, max_catch, line_break_chance = row
+      db_id, name, value, min_catch, max_catch, line_break_chance = row
 
       fish_service.rods.append(
         Rod(
           id=db_id,
-          name=name, internal_name=internal_name,
+          name=name,
           value=value,
           min_catch=min_catch, max_catch=max_catch,
           line_break_chance=line_break_chance
