@@ -1,0 +1,259 @@
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+from discord import ui
+
+from fisher_bot import FisherBot
+from models.fish import Fish
+from models.fuser import FUser
+from models.rod import Rod
+from util.paginator_view import PaginatorView
+
+
+class InventoryPaginator(PaginatorView):
+  def __init__(self, data, rod: Rod, per_page=5, timeout=60):
+    super().__init__(data, per_page=per_page, timeout=timeout, title="Inventory")
+    self.rod = rod
+
+
+  async def format_page(self, entries):
+    embed = discord.Embed(title = "Inventory", colour=discord.Colour.blue())
+
+    desc = ''
+    for i, fish_data in enumerate(entries):
+      desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value})\n'
+
+    embed.add_field(
+      name=f'Current rod: {self.rod.name}',
+      value=f'Fish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{("Value: {self.rod.value}\n" if self.rod.value != 0 else '')}',
+      inline=False
+    )
+
+    embed.description = desc
+
+    embed.set_footer(text=f"Page {self.current_page + 1}/{self.total_pages}")
+    return embed
+
+
+class SellingView(ui.View):
+  def __init__(self, fish_id: int, member_id: int, guild_id: int, bot: FisherBot, fish_data: tuple[Fish, int], user: FUser):
+    super().__init__(timeout=60)
+
+    self.fishid = int(fish_id)
+    self.fish_to_sell = 1
+
+    self.fish_data = fish_data
+
+    self.bot = bot
+    self.user = user
+
+    self.member_id = member_id
+    self.guild_id = guild_id
+
+    self.update_buttons()
+
+
+  def update_buttons(self):
+    self.children[0].disabled = self.fish_to_sell + 1 > self.fish_data[1]
+    self.children[1].disabled = self.fish_to_sell + 5 > self.fish_data[1]
+    self.children[2].disabled = self.fish_to_sell + 10 > self.fish_data[1]
+    self.children[3].disabled = self.fish_to_sell + 50 > self.fish_data[1]
+    self.children[4].disabled = self.fish_to_sell + 100 > self.fish_data[1]
+
+    self.children[5].disabled = self.fish_to_sell - 1 < 0
+    self.children[6].disabled = self.fish_to_sell - 5 < 0
+    self.children[7].disabled = self.fish_to_sell - 10 < 0
+    self.children[8].disabled = self.fish_to_sell - 50 < 0
+    self.children[9].disabled = self.fish_to_sell - 100 < 0
+
+
+  async def create_embed(self, interaction: discord.Interaction):
+    embed = discord.Embed(
+      title='Fish MegaMart!',
+      description=f'You have a total of {self.fish_data[1]} {self.fish_data[0].name}.\nCurrently on the chopping block: {self.fish_to_sell}',
+      colour=discord.Colour.gold()
+    )
+
+    await interaction.response.edit_message(embed=embed, view=self)
+
+
+  @discord.ui.button(label="+1", style=discord.ButtonStyle.blurple)
+  async def sell_one(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell += 1
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="+5", style=discord.ButtonStyle.blurple)
+  async def sell_five(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell += 5
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="+10", style=discord.ButtonStyle.blurple)
+  async def sell_ten(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell += 10
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="+50", style=discord.ButtonStyle.blurple)
+  async def sell_fifty(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell += 50
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="+100", style=discord.ButtonStyle.blurple)
+  async def sell_onehunge(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell += 100
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="-1", style=discord.ButtonStyle.blurple)
+  async def remove_one(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell -= 1
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="-5", style=discord.ButtonStyle.blurple)
+  async def remove_five(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell -= 5
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="-10", style=discord.ButtonStyle.blurple)
+  async def remove_ten(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell -= 10
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="-50", style=discord.ButtonStyle.blurple)
+  async def remove_fifty(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell -= 50
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="-100", style=discord.ButtonStyle.blurple)
+  async def remove_onehunge(self, interaction: discord.Interaction, button: ui.Button):
+    self.fish_to_sell -= 100
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label='all', style=discord.ButtonStyle.secondary)
+  async def add_all(self, interaction: discord.Integration, button: discord.ui.Button):
+    self.fish_to_sell = self.fish_data[1]
+    self.update_buttons()
+
+    await self.create_embed(interaction)
+
+
+  @discord.ui.button(label="sell", style=discord.ButtonStyle.green)
+  async def finish_transaction(self, interaction: discord.Interaction, button: discord.ui.Button):
+    count = self.fish_data[1] - self.fish_to_sell
+
+    self.bot.db.update_user_fish(self.member_id, self.guild_id, self.fishid, count)
+
+    coins_earned = self.fish_data[0].base_value * self.fish_to_sell
+    self.user.coins += coins_earned
+    self.bot.db.update_user(self.guild_id, self.member_id, self.user)
+
+    embed = discord.Embed(title='Fish MegaMart!', description=f'You sold {self.fish_to_sell} {self.fish_data[0].name} for {coins_earned}!', colour=discord.Colour.green())
+
+    self.stop()
+    await interaction.response.edit_message(embed=embed, view=None)
+
+
+  @discord.ui.button(label="cancel", style=discord.ButtonStyle.red)
+  async def cancel_all(self, interaction: discord.Interaction, button: discord.ui.Button):
+    embed = discord.Embed(title='You leave the Fish MegaMart with nothing sold...', colour=discord.Colour.red())
+
+    self.stop()
+    await interaction.response.edit_message(embed=embed, view=None)
+
+
+class FishingActions(commands.Cog):
+  def __init__(self, bot: FisherBot):
+    self.bot = bot
+
+  @app_commands.command(name='inventory', description='Look at your fish and rod!')
+  async def inventory(self, interaction: discord.Interaction):
+    guildid = interaction.guild_id
+    memberid = interaction.user.id
+
+    self.bot.db.ensure_guild(guildid)
+
+    _ = self.bot.db.ensure_user(guildid, memberid)
+
+    rod: Rod = self.bot.db.get_user_rod(guildid, memberid)
+    fish: list[(Fish, int)] = self.bot.db.get_all_user_fish(guildid, memberid)
+
+    paginator = InventoryPaginator(data=fish, rod=rod)
+    first_page_entries = paginator.get_current_page_data()
+    first_embed = await paginator.format_page(first_page_entries)
+
+    await interaction.response.send_message(embed=first_embed, view=paginator)
+
+
+  async def fish_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+    guildid = interaction.guild_id
+    memberid = interaction.user.id
+
+    inventory = self.bot.db.get_all_user_fish(guildid, memberid)
+
+    choices = []
+    for fish_obj, count in inventory:
+      if current.lower() in fish_obj.name.lower():
+        choices.append(
+          app_commands.Choice(
+            name=f"{fish_obj.name.title()} (x{count})",
+            value=str(fish_obj.id)
+          )
+        )
+
+    return choices[:25]
+
+
+  @app_commands.command(name='sell', description='Sell your unwanted fish!')
+  @app_commands.autocomplete(fish=fish_autocomplete)
+  async def sell(self, interaction: discord.Interaction, fish: str):
+    guild_id = interaction.guild_id
+    member_id = interaction.user.id
+
+    self.bot.db.ensure_guild(guild_id)
+
+    user: FUser = self.bot.db.ensure_user(member_id, guild_id)
+
+    fish_data = self.bot.db.get_user_fish(guild_id, member_id, int(fish))
+
+    embed = discord.Embed(
+      title='Fish MegaMart!',
+      description=f'You have a total of {fish_data[1]} {fish_data[0].name}.\nCurrently on the chopping block: 1',
+      colour=discord.Colour.gold()
+    )
+
+    view = SellingView(fish_id=fish, member_id=member_id, guild_id=guild_id, bot=self.bot, fish_data=fish_data, user=user)
+
+    await interaction.response.send_message(embed=embed, view=view)
+
+
+async def setup(bot: commands.Bot):
+  await bot.add_cog(FishingActions(bot))

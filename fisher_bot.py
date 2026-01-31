@@ -114,19 +114,19 @@ class FisherBot(commands.Bot):
 
 
   async def setup_hook(self):
-    for root, dirs, files in os.walk('commands'):
+    for root, dirs, files in os.walk('modules'):
       for file in files:
         if file.endswith('.py'):
-          path = os.path.relpath(os.path.join(root, file), 'commands').replace('\\', '.').replace('.py', '')
+          path = os.path.relpath(os.path.join(root, file), 'modules').replace('\\', '.').replace('.py', '')
 
           if path.startswith('_'):
             continue
 
           try:
-            await self.load_extension(f'commands.{path}')
-            print(f'Loaded command: {path}')
+            await self.load_extension(f'modules.{path}')
+            print(f'Loaded module: {path}')
           except Exception as e:
-            print(f'Failed to load command {path}: {e}')
+            print(f'Failed to load module {path}: {e}')
 
     print('Syncing.')
     try:
