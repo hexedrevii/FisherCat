@@ -1,20 +1,70 @@
 {
   "fish_data": [
-    {"name": "bass",
+    {
+      "name": "Largemouth Bass",
       "rarity": "common",
-      "odds": 2,
       "area": "lake",
+      "odds": 2,
       "base_value": 10
     },
+    {
+      "name": "Black Sea Bass",
+      "rarity": "common",
+      "area": "ocean",
+      "odds": 2,
+      "base_value": 10
+    },
+    {
+      "name": "smallmouth Bass",
+      "rarity": "uncommon",
+      "area": "lake",
+      "odds": 5,
+      "base_value": 35
+    },
+    {
+      "name": "Kelp Bass",
+      "rarity": "uncommon",
+      "area": "ocean",
+      "odds": 5,
+      "base_value": 35
+    },
+    {
+      "name": "Peacock Bass",
+      "rarity": "rare",
+      "area": "lake",
+      "odds": 20,
+      "base_value": 200
+    },
+    {
+      "name": "White Sea Bass",
+      "rarity": "rare",
+      "area": "ocean",
+      "odds": 25,
+      "base_value": 250
+    },
+    {
+      "name": "Guadalupe Bass",
+      "rarity": "legendary",
+      "area": "lake",
+      "odds": 100,
+      "base_value": 600
+    },
+    {
+      "name": "Giant Sea Bass",
+      "rarity": "legendary",
+      "area": "ocean",
+      "odds": 100,
+      "base_value": 1500
+    },
 
-    {"name": "salmon",
+    {"name": "Salmon",
       "rarity": "common",
       "odds": 5,
       "area": "lake",
       "base_value": 15
     },
 
-    {"name": "tuna",
+    {"name": "Tuna",
       "rarity": "common",
       "odds": 7,
       "area": "lake",

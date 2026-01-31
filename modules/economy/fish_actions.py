@@ -22,7 +22,7 @@ class InventoryPaginator(PaginatorView):
 
     desc = ''
     for i, fish_data in enumerate(entries):
-      desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value})\n'
+      desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value}) [{fish_data[0].rarity.name.title()}]\n'
 
     embed.add_field(
       name=f'Current rod: {self.rod.name}',
@@ -61,11 +61,11 @@ class SellingView(ui.View):
     self.children[3].disabled = self.fish_to_sell + 50 > self.fish_data[1]
     self.children[4].disabled = self.fish_to_sell + 100 > self.fish_data[1]
 
-    self.children[5].disabled = self.fish_to_sell - 1 < 0
-    self.children[6].disabled = self.fish_to_sell - 5 < 0
-    self.children[7].disabled = self.fish_to_sell - 10 < 0
-    self.children[8].disabled = self.fish_to_sell - 50 < 0
-    self.children[9].disabled = self.fish_to_sell - 100 < 0
+    self.children[5].disabled = self.fish_to_sell - 1 < 1
+    self.children[6].disabled = self.fish_to_sell - 5 < 1
+    self.children[7].disabled = self.fish_to_sell - 10 < 1
+    self.children[8].disabled = self.fish_to_sell - 50 < 1
+    self.children[9].disabled = self.fish_to_sell - 100 < 1
 
 
   async def create_embed(self, interaction: discord.Interaction):
@@ -176,7 +176,7 @@ class SellingView(ui.View):
     self.user.coins += coins_earned
     self.bot.db.update_user(self.guild_id, self.member_id, self.user)
 
-    embed = discord.Embed(title='Fish MegaMart!', description=f'You sold {self.fish_to_sell} {self.fish_data[0].name} for {coins_earned}!', colour=discord.Colour.green())
+    embed = discord.Embed(title='Fish MegaMart!', description=f'You sold {self.fish_to_sell} {self.fish_data[0].name} for {coins_earned} coins!', colour=discord.Colour.green())
 
     self.stop()
     await interaction.response.edit_message(embed=embed, view=None)
@@ -201,9 +201,9 @@ class FishingActions(commands.Cog):
 
     self.bot.db.ensure_guild(guildid)
 
-    _ = self.bot.db.ensure_user(guildid, memberid)
+    _ = self.bot.db.ensure_user(memberid, guildid)
 
-    rod: Rod = self.bot.db.get_user_rod(guildid, memberid)
+    rod: Rod = self.bot.db.get_user_rod(memberid, guildid)
     fish: list[(Fish, int)] = self.bot.db.get_all_user_fish(guildid, memberid)
 
     paginator = InventoryPaginator(data=fish, rod=rod)
