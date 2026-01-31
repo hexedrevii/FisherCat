@@ -8,6 +8,7 @@ import random
 from datetime import datetime
 import datetime
 
+from fisher_bot import FisherBot
 from models.area import Area
 from models.fish import Fish
 from models.rod import Rod
@@ -15,7 +16,7 @@ from util.weighted_random import WeightedRandom
 
 
 class Fishing(commands.Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot: FisherBot):
     self.bot = bot
 
     self.user_cooldowns = []

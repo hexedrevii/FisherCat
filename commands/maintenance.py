@@ -3,9 +3,11 @@ from discord import app_commands
 
 import discord
 
+from fisher_bot import FisherBot
+
 
 class Maintenance(commands.Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot: FisherBot):
     self.bot = bot
 
 

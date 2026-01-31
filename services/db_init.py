@@ -274,7 +274,7 @@ def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
 
   cursor = conn.cursor()
   try:
-    cursor.execute('SELECT id, name, internalname, value, mincatch, maxcatch, linebreakchance FROM rods;')
+    cursor.execute('SELECT id, name, internalname, value, mincatch, maxcatch, linebreakchance FROM rod;')
     rows = cursor.fetchall()
 
     count = 0
@@ -292,6 +292,9 @@ def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
       )
 
       count += 1
+
+    print(f'Sucessfully imported {count} rods.')
+    return True
 
   except sqlite3.Error as e:
     print(f'Error importing rods: {e}')

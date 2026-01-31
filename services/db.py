@@ -1,7 +1,10 @@
 import sqlite3
+from models.area import Area
+from models.fish import Fish
 from models.fuser import FUser
 from datetime import datetime
 
+from models.rarity import Rarity
 from models.rod import Rod
 
 class DbService:
@@ -88,6 +91,44 @@ class DbService:
       self.connection.commit()
     except Exception as e:
        print(f"Error adding fish {fish_id} to member {member_id} in guild {guild_id}: {e}")
+
+
+  def get_all_user_fish(self, guild_id: int, member_id: int) -> list[(Fish, int)]:
+    '''
+      Returns a list of tuples, containing the fish on the left and the amount of it on the right.
+    '''
+
+    try:
+      cursor = self.connection.cursor()
+      cursor.execute('''
+        SELECT * FROM inventory
+        WHERE guildid = ? AND memberid = ?;
+      ''', (guild_id, member_id))
+
+      rows = cursor.fetchall()
+      fish_data: list[(Fish, int)] = []
+
+      for row in rows:
+        fish_id = row['fishid']
+        fish_amount = row['amount']
+
+        cursor.execute("SELECT id, name, rarity, odds, area, base_value FROM fish WHERE id = ?", (fish_id,))
+        fish_row = cursor.fetchone()
+
+        fish = Fish(
+          id=fish_row['id'],
+          name=fish_row['name'],
+          rarity=Rarity[fish_row['rarity']],
+          odds=fish_row['odds'],
+          area=Area[fish_row['area']],
+          base_value=fish_row['base_value']
+        )
+
+        fish_data.append((fish, fish_amount))
+
+      return fish_data
+    except Exception as e:
+      print(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
 
 
   def get_user_rod(self, member_id: int, guild_id: int) -> Rod|None:
