@@ -16,7 +16,7 @@ from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
-DELETE_DEFAULTS: bool = False
+DELETE_DEFAULTS: bool = True
 
 
 class FisherBot(commands.Bot):

@@ -1,84 +1,85 @@
+
 {
   "fish_data": [
     {
       "name": "Largemouth Bass",
-      "xp": 5,
+      "xp": 8,
       "rarity": "common",
       "area": "lake",
       "odds": 2,
-      "base_value": 10
+      "base_value": 15
     },
     {
       "name": "Black Sea Bass",
-      "xp": 5,
+      "xp": 8,
       "rarity": "common",
       "area": "ocean",
       "odds": 2,
-      "base_value": 10
+      "base_value": 15
     },
     {
-      "name": "smallmouth Bass",
-      "xp": 7,
+      "name": "Smallmouth Bass",
+      "xp": 20,
       "rarity": "uncommon",
       "area": "lake",
       "odds": 5,
-      "base_value": 35
+      "base_value": 45
     },
     {
       "name": "Kelp Bass",
-      "xp": 7,
+      "xp": 20,
       "rarity": "uncommon",
       "area": "ocean",
       "odds": 5,
-      "base_value": 35
+      "base_value": 45
     },
     {
       "name": "Peacock Bass",
-      "xp": 12,
+      "xp": 75,
       "rarity": "rare",
       "area": "lake",
       "odds": 20,
-      "base_value": 200
-    },
-    {
-      "name": "White Sea Bass",
-      "xp": 12,
-      "rarity": "rare",
-      "area": "ocean",
-      "odds": 25,
       "base_value": 250
     },
     {
+      "name": "White Sea Bass",
+      "xp": 75,
+      "rarity": "rare",
+      "area": "ocean",
+      "odds": 25,
+      "base_value": 300
+    },
+    {
       "name": "Guadalupe Bass",
-      "xp": 50,
+      "xp": 300,
       "rarity": "legendary",
       "area": "lake",
       "odds": 50,
-      "base_value": 600
+      "base_value": 1000
     },
     {
       "name": "Giant Sea Bass",
-      "xp": 100,
+      "xp": 500,
       "rarity": "legendary",
       "area": "ocean",
       "odds": 100,
-      "base_value": 1500
+      "base_value": 2500
     },
-
-    {"name": "Salmon",
-      "xp": 5,
+    {
+      "name": "Salmon",
+      "xp": 8,
       "rarity": "common",
       "odds": 5,
       "area": "lake",
-      "base_value": 15
+      "base_value": 20
     },
-
-    {"name": "Tuna",
-      "xp": 5,
+    {
+      "name": "Tuna",
+      "xp": 8,
       "rarity": "common",
       "odds": 7,
       "area": "lake",
-      "base_value": 20
+      "base_value": 25
     }
   ]
 }

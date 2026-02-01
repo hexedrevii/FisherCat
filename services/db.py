@@ -20,7 +20,7 @@ class DbService:
       self.DAILY_XP_BONUS = 100
 
       self.LEVEL_INCREASE: float = 0.15
-      self.LEVEL_GAP: float = 2.0
+      self.LEVEL_GAP: float = 1.7
 
       self.COIN_REWARD: int = 50
       self.COIN_REWARD_INCREASE: float = 12.7
@@ -106,8 +106,9 @@ class DbService:
         total_coins += reward
         user.coins += reward
 
-        if user.level % 5 == 0:
-          user.xp_step += 5
+        if user.xp_next != 0:
+          if user.level % 10 == 0:
+            user.xp_step += 1
 
         user.xp_next = math.floor(math.pow(user.level / self.LEVEL_INCREASE, self.LEVEL_GAP))
 
@@ -225,7 +226,7 @@ class DbService:
 
       query = """
         SELECT
-          r.id, r.name, r.value, r.mincatch, r.maxcatch, r.linebreakchance
+          r.id, r.name, r.description, r.value, r.levelrequired, r.xpmultiplier, r.mincatch, r.maxcatch, r.linebreakchance
         FROM guildmember gm
         JOIN rod r ON gm.rodid = r.id
         WHERE gm.memberid = ? AND gm.guildid = ?
@@ -239,7 +240,10 @@ class DbService:
       return Rod(
         id=dbrod['id'],
         name=dbrod['name'],
+        description=dbrod['description'],
         value=dbrod['value'],
+        level_required=dbrod['levelrequired'],
+        xp_multiplier=dbrod['xpmultiplier'],
         min_catch=dbrod['mincatch'], max_catch=dbrod['maxcatch'],
         line_break_chance=dbrod['linebreakchance']
       )

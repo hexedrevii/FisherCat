@@ -1,4 +1,6 @@
 import discord
+import math
+
 from discord import app_commands
 from discord.ext import commands
 
@@ -25,8 +27,8 @@ class InventoryPaginator(PaginatorView):
       desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value} coins, {fish_data[0].xp} XP) [{fish_data[0].rarity.name.title()}]\n'
 
     embed.add_field(
-      name=f'Current rod: {self.rod.name}',
-      value=f'Fish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{("Value: {self.rod.value}\n" if self.rod.value != 0 else '')}',
+      name=f'Current rod: {self.rod.name} "{self.rod.description}"',
+      value=f'Fish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{("Value: {self.rod.value}\n" if self.rod.value != 0 else '')}\nXP Multiplier: {self.rod.xp_multiplier}',
       inline=False
     )
 
@@ -175,7 +177,9 @@ class SellingView(ui.View):
     coins_earned = self.fish_data[0].base_value * self.fish_to_sell
     self.user.coins += coins_earned
 
-    xp_earned = self.fish_data[0].xp * self.fish_to_sell
+    rod: Rod = self.bot.db.get_user_rod(member_id= self.member_id, guild_id= self.guild_id)
+
+    xp_earned = math.floor(self.fish_data[0].xp * self.fish_to_sell * rod.xp_multiplier)
     total_levels, total_coins = self.bot.db.add_xp(guild_id=self.guild_id, member_id=self.member_id, xp=xp_earned, user=self.user)
 
     self.bot.db.update_user(self.guild_id, self.member_id, self.user)
