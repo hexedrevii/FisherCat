@@ -73,8 +73,11 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
       CREATE TABLE IF NOT EXISTS rod (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
+        description TEXT NOT NULL,
 
         value INTEGER NOT NULL,
+        levelrequired INTEGER NOT NULL,
+        xpmultiplier REAL NOT NULL,
 
         mincatch INTEGER NOT NULL,
         maxcatch INTEGER NOT NULL,
@@ -245,9 +248,9 @@ def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
   try:
     for r in rod_data['rod_data']:
       cursor.execute('''
-        INSERT INTO rod (name, value, mincatch, maxcatch, linebreakchance)
-        VALUES (?, ?, ?, ?, ?)
-      ''', (r['name'], r['value'], r['min_catch'], r['max_catch'], r['line_break_chance']))
+        INSERT INTO rod (name, description, value, levelrequired, xpmultiplier, mincatch, maxcatch, linebreakchance)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ''', (r['name'], r['description'], r['value'], r['level_required'], r['xp_multiplier'], r['min_catch'], r['max_catch'], r['line_break_chance']))
 
       generated_id = cursor.lastrowid
 
@@ -255,7 +258,10 @@ def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
         Rod(
           id=generated_id,
           name=r['name'],
+          description=r['description'],
           value=r['value'],
+          level_required=r['level_required'],
+          xp_multiplier=r['xp_multiplier'],
           max_catch=r['max_catch'], min_catch=r['min_catch'],
           line_break_chance=r['line_break_chance']
         )
@@ -276,18 +282,21 @@ def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
 
   cursor = conn.cursor()
   try:
-    cursor.execute('SELECT id, name, value, mincatch, maxcatch, linebreakchance FROM rod;')
+    cursor.execute('SELECT id, name, description, value, levelrequired, xpmultiplier, mincatch, maxcatch, linebreakchance FROM rod;')
     rows = cursor.fetchall()
 
     count = 0
     for row in rows:
-      db_id, name, value, min_catch, max_catch, line_break_chance = row
+      db_id, name, description, value, level_required, xp_multiplier, min_catch, max_catch, line_break_chance = row
 
       fish_service.rods.append(
         Rod(
           id=db_id,
           name=name,
+          description=description,
           value=value,
+          level_required=level_required,
+          xp_multiplier=xp_multiplier,
           min_catch=min_catch, max_catch=max_catch,
           line_break_chance=line_break_chance
         )
