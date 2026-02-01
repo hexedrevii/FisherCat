@@ -22,7 +22,7 @@ class InventoryPaginator(PaginatorView):
 
     desc = ''
     for i, fish_data in enumerate(entries):
-      desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value}) [{fish_data[0].rarity.name.title()}]\n'
+      desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value} coins, {fish_data[0].xp} XP) [{fish_data[0].rarity.name.title()}]\n'
 
     embed.add_field(
       name=f'Current rod: {self.rod.name}',
@@ -174,9 +174,16 @@ class SellingView(ui.View):
 
     coins_earned = self.fish_data[0].base_value * self.fish_to_sell
     self.user.coins += coins_earned
+
+    xp_earned = self.fish_data[0].xp * self.fish_to_sell
+    total_levels, total_coins = self.bot.db.add_xp(guild_id=self.guild_id, member_id=self.member_id, xp=xp_earned, user=self.user)
+
     self.bot.db.update_user(self.guild_id, self.member_id, self.user)
 
-    embed = discord.Embed(title='Fish MegaMart!', description=f'You sold {self.fish_to_sell} {self.fish_data[0].name} for {coins_earned} coins!', colour=discord.Colour.green())
+    embed = discord.Embed(title='Fish MegaMart!', description=f'You sold {self.fish_to_sell} {self.fish_data[0].name} for {coins_earned} coins and {xp_earned} XP!', colour=discord.Colour.green())
+
+    if total_levels != 0:
+      embed.add_field(name='You leveled up!', value=f'Coins Earned: {total_coins}\nLevels Earned: {total_levels}')
 
     self.stop()
     await interaction.response.edit_message(embed=embed, view=None)
