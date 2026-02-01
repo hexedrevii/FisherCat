@@ -16,13 +16,7 @@ from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
-DELETE_DEFAULTS: bool = True
-
-LEVEL_INCREASE: float = 0.15
-LEVEL_GAP: float = 2.0
-
-COIN_REWARD: int = 50
-COIN_REWARD_INCREASE: float = 12.7
+DELETE_DEFAULTS: bool = False
 
 
 class FisherBot(commands.Bot):
@@ -46,13 +40,11 @@ class FisherBot(commands.Bot):
 
       if drop_tables(self.connection):
         print("Dropped existing tables.")
-      else:
-        sys.exit(1)
+      else: sys.exit(1)
 
       if initialize_database(self.connection):
         print("Initialized database.")
-      else:
-        sys.exit(1)
+      else: sys.exit(1)
 
       if not import_fish(self.connection, self.fish_service): sys.exit(1)
       if not import_rods(self.connection, self.fish_service): sys.exit(1)
@@ -98,7 +90,7 @@ class FisherBot(commands.Bot):
 
         user.level += 1
 
-        reward = math.floor(COIN_REWARD + (user.level * COIN_REWARD_INCREASE))
+        reward = math.floor(self.db.COIN_REWARD + (user.level * self.db.COIN_REWARD_INCREASE))
 
         total_coins += reward
         user.coins += reward
@@ -106,7 +98,7 @@ class FisherBot(commands.Bot):
         if user.level % 5 == 0:
           user.xp_step += 5
 
-        user.xp_next = math.floor(math.pow(user.level / LEVEL_INCREASE, LEVEL_GAP))
+        user.xp_next = math.floor(math.pow(user.level / self.db.LEVEL_INCREASE, self.db.LEVEL_GAP))
 
       await message.channel.send(f"Congrats, {message.author.mention}! You leveled up and earned {total_coins} coins!")
 

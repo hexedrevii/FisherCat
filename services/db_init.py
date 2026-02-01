@@ -61,6 +61,7 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
         CREATE TABLE IF NOT EXISTS fish (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
+            xp INTEGER NOR NULL,
             rarity INTEGER NOT NULL,
             odds INTEGER NOT NULL,
             area TEXT NOT NULL,
@@ -148,15 +149,16 @@ def import_fish(conn: sqlite3.Connection, fish_service: FishService):
   try:
     for f in fish_data['fish_data']:
       cursor.execute("""
-        INSERT INTO fish (name, rarity, odds, area, base_value)
-        VALUES (?, ?, ?, ?, ?);
-      """, (f['name'], f['rarity'], f['odds'], f['area'], f['base_value']))
+        INSERT INTO fish (name, xp, rarity, odds, area, base_value)
+        VALUES (?, ?, ?, ?, ?, ?);
+      """, (f['name'], f['xp'], f['rarity'], f['odds'], f['area'], f['base_value']))
 
       generated_id = cursor.lastrowid
 
       fish = Fish(
         id=generated_id,
         name=f['name'],
+        xp=f['xp'],
         rarity=Rarity[f['rarity']],
         odds=f['odds'],
         area=Area[f['area']],
@@ -188,16 +190,17 @@ def load_existing_fish(conn: sqlite3.Connection, fish_service: FishService) -> b
   cursor = conn.cursor()
 
   try:
-    cursor.execute("SELECT id, name, rarity, odds, area, base_value FROM fish")
+    cursor.execute("SELECT id, name, xp, rarity, odds, area, base_value FROM fish")
     rows = cursor.fetchall()
 
     count = 0
     for row in rows:
-      db_id, name, rarity_str, odds, area_str, base_value = row
+      db_id, name, xp, rarity_str, odds, area_str, base_value = row
 
       fish = Fish(
         id=db_id,
         name=name,
+        xp=xp,
         rarity=Rarity[rarity_str],
         odds=odds,
         area=Area[area_str],
@@ -251,7 +254,7 @@ def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
       fish_service.rods.append(
         Rod(
           id=generated_id,
-          name=r['name'], internal_name=r['internal_name'],
+          name=r['name'],
           value=r['value'],
           max_catch=r['max_catch'], min_catch=r['min_catch'],
           line_break_chance=r['line_break_chance']
