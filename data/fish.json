@@ -1,4 +1,3 @@
-
 {
   "fish_data": [
     {
@@ -80,6 +79,126 @@
       "odds": 7,
       "area": "lake",
       "base_value": 25
+    },
+    {
+      "name": "Bluegill",
+      "xp": 6,
+      "rarity": "common",
+      "area": "swamp",
+      "odds": 2,
+      "base_value": 12
+    },
+    {
+      "name": "Channel Catfish",
+      "xp": 8,
+      "rarity": "common",
+      "area": "swamp",
+      "odds": 4,
+      "base_value": 18
+    },
+    {
+      "name": "Bowfin",
+      "xp": 22,
+      "rarity": "uncommon",
+      "area": "swamp",
+      "odds": 6,
+      "base_value": 50
+    },
+    {
+      "name": "Alligator Gar",
+      "xp": 85,
+      "rarity": "rare",
+      "area": "swamp",
+      "odds": 28,
+      "base_value": 320
+    },
+    {
+      "name": "Goliath Catfish",
+      "xp": 350,
+      "rarity": "legendary",
+      "area": "swamp",
+      "odds": 65,
+      "base_value": 1400
+    },
+    {
+      "name": "Rainbow Trout",
+      "xp": 8,
+      "rarity": "common",
+      "area": "river",
+      "odds": 3,
+      "base_value": 18
+    },
+    {
+      "name": "Carp",
+      "xp": 8,
+      "rarity": "common",
+      "area": "river",
+      "odds": 4,
+      "base_value": 15
+    },
+    {
+      "name": "Northern Pike",
+      "xp": 25,
+      "rarity": "uncommon",
+      "area": "river",
+      "odds": 7,
+      "base_value": 65
+    },
+    {
+      "name": "White Sturgeon",
+      "xp": 90,
+      "rarity": "rare",
+      "area": "river",
+      "odds": 30,
+      "base_value": 400
+    },
+    {
+      "name": "Goliath Tigerfish",
+      "xp": 450,
+      "rarity": "legendary",
+      "area": "river",
+      "odds": 85,
+      "base_value": 2100
+    },
+    {
+      "name": "Clownfish",
+      "xp": 6,
+      "rarity": "common",
+      "area": "ocean",
+      "odds": 1,
+      "base_value": 15
+    },
+    {
+      "name": "Red Snapper",
+      "xp": 20,
+      "rarity": "uncommon",
+      "area": "ocean",
+      "odds": 5,
+      "base_value": 45
+    },
+    {
+      "name": "Mahi-Mahi",
+      "xp": 80,
+      "rarity": "rare",
+      "area": "ocean",
+      "odds": 22,
+      "base_value": 280
+    },
+    {
+      "name": "Blue Marlin",
+      "xp": 480,
+      "rarity": "legendary",
+      "area": "ocean",
+      "odds": 95,
+      "base_value": 2400
+    },
+    {
+      "name": "Blobfish",
+      "xp": 600,
+      "rarity": "legendary",
+      "area": "ocean",
+      "odds": 150,
+      "base_value": 3500
     }
   ]
 }

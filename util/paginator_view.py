@@ -20,8 +20,8 @@ class PaginatorView(ui.View):
 
 
   def update_buttons(self):
-    self.children[0].disabled = (self.current_page == 0)
-    self.children[1].disabled = (self.current_page == self.total_pages - 1)
+    self.children[0].disabled = (self.current_page == 0) # type: ignore
+    self.children[1].disabled = (self.current_page == self.total_pages - 1) # type: ignore
 
 
   async def update_message(self, interaction: discord.Interaction):

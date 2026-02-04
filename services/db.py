@@ -1,5 +1,6 @@
 import sqlite3
 import math
+from typing import Optional
 
 from models.area import Area
 from models.fish import Fish
@@ -11,6 +12,10 @@ from models.rod import Rod
 
 from datetime import datetime, timedelta
 
+import logging
+
+
+LOGGER = logging.getLogger('FisherCat.DbService')
 
 class DbService:
   def __init__(self, connection: sqlite3.Connection):
@@ -41,12 +46,12 @@ class DbService:
       cursor.execute("INSERT OR IGNORE INTO guild (id) VALUES (?)", (guild_id,))
       self.connection.commit()
 
-      print("Enrolled guild: ", guild_id)
+      LOGGER.info("Enrolled guild: ", guild_id)
     except Exception as e:
-      print(f"Error enrolling guild {guild_id}: {e}")
+      LOGGER.error(f"Enrolling guild {guild_id}: {e}")
 
 
-  def ensure_user(self, member_id: int, guild_id: int) -> FUser|None:
+  def ensure_user(self, member_id: int, guild_id: int) -> Optional[FUser]:
     '''
     Add user to the database if not already present.
     '''
@@ -87,7 +92,7 @@ class DbService:
 
       return FUser()
     except Exception as e:
-      print(f"Error enrolling user {member_id} in guild {guild_id}: {e}")
+      LOGGER.error(f"enrolling user {member_id} in guild {guild_id}: {e}")
 
 
   def add_xp(self, guild_id: int, member_id: int, xp: int, user: FUser) -> tuple[int, int]:
@@ -134,7 +139,7 @@ class DbService:
        print(f"Error adding fish {fish_id} to member {member_id} in guild {guild_id}: {e}")
 
 
-  def get_all_user_fish(self, guild_id: int, member_id: int) -> list[(Fish, int)]:
+  def get_all_user_fish(self, guild_id: int, member_id: int) -> Optional[list[tuple[Fish, int]]]:
     '''
       Returns a list of tuples, containing the fish on the left and the amount of it on the right.
     '''
@@ -147,7 +152,7 @@ class DbService:
       ''', (guild_id, member_id))
 
       rows = cursor.fetchall()
-      fish_data: list[(Fish, int)] = []
+      fish_data: list[tuple[Fish, int]] = []
 
       for row in rows:
         fish_id = row['fishid']
@@ -170,10 +175,10 @@ class DbService:
 
       return fish_data
     except Exception as e:
-      print(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
+      LOGGER.error(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
 
 
-  def get_user_fish(self, guild_id: int, member_id: int, fish_id: int) -> tuple[Fish, int]:
+  def get_user_fish(self, guild_id: int, member_id: int, fish_id: int) -> Optional[tuple[Fish, int]]:
     try:
       cursor = self.connection.cursor()
       cursor.execute('''
@@ -194,9 +199,9 @@ class DbService:
         base_value=row['base_value']
       )
 
-      return (fish, row['amount'])
+      return (fish, int(row['amount']))
     except Exception as e:
-      print(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
+      LOGGER.error(f'Error fetching fish from user {member_id} in {guild_id}: {e}')
 
 
   def update_user_fish(self, member_id: int, guild_id: int, fish_id: int, count: int):
@@ -217,7 +222,7 @@ class DbService:
 
       self.connection.commit()
     except Exception as e:
-      print(f'Error updating fish from user {member_id} in {guild_id} for fish {fish_id}: {e}')
+      LOGGER.error(f'Error updating fish from user {member_id} in {guild_id} for fish {fish_id}: {e}')
 
 
   def get_user_rod(self, member_id: int, guild_id: int) -> Rod|None:
@@ -248,7 +253,7 @@ class DbService:
         line_break_chance=dbrod['linebreakchance']
       )
     except Exception as e:
-      print(f'Error fetching rod from user {member_id} in guild {guild_id}: {e}')
+      LOGGER.error(f'Error fetching rod from user {member_id} in guild {guild_id}: {e}')
       return None
 
 
@@ -274,4 +279,4 @@ class DbService:
 
       self.connection.commit()
     except Exception as e:
-      print(f"Error updating user: {e}")
+      LOGGER.error(f"Error updating user: {e}")

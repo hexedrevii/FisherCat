@@ -57,17 +57,17 @@ class SellingView(ui.View):
 
 
   def update_buttons(self):
-    self.children[0].disabled = self.fish_to_sell + 1 > self.fish_data[1]
-    self.children[1].disabled = self.fish_to_sell + 5 > self.fish_data[1]
-    self.children[2].disabled = self.fish_to_sell + 10 > self.fish_data[1]
-    self.children[3].disabled = self.fish_to_sell + 50 > self.fish_data[1]
-    self.children[4].disabled = self.fish_to_sell + 100 > self.fish_data[1]
+    self.children[0].disabled = self.fish_to_sell + 1 > self.fish_data[1] # type: ignore
+    self.children[1].disabled = self.fish_to_sell + 5 > self.fish_data[1] # type: ignore
+    self.children[2].disabled = self.fish_to_sell + 10 > self.fish_data[1] # type: ignore
+    self.children[3].disabled = self.fish_to_sell + 50 > self.fish_data[1] # type: ignore
+    self.children[4].disabled = self.fish_to_sell + 100 > self.fish_data[1] # type: ignore
 
-    self.children[5].disabled = self.fish_to_sell - 1 < 1
-    self.children[6].disabled = self.fish_to_sell - 5 < 1
-    self.children[7].disabled = self.fish_to_sell - 10 < 1
-    self.children[8].disabled = self.fish_to_sell - 50 < 1
-    self.children[9].disabled = self.fish_to_sell - 100 < 1
+    self.children[5].disabled = self.fish_to_sell - 1 < 1 # type: ignore
+    self.children[6].disabled = self.fish_to_sell - 5 < 1 # type: ignore
+    self.children[7].disabled = self.fish_to_sell - 10 < 1 # type: ignore
+    self.children[8].disabled = self.fish_to_sell - 50 < 1 # type: ignore
+    self.children[9].disabled = self.fish_to_sell - 100 < 1 # type: ignore
 
 
   async def create_embed(self, interaction: discord.Interaction):
@@ -160,12 +160,12 @@ class SellingView(ui.View):
     await self.create_embed(interaction)
 
 
-  @discord.ui.button(label='all', style=discord.ButtonStyle.secondary)
+  @discord.ui.button(label='all', style=discord.ButtonStyle.secondary) # type: ignore
   async def add_all(self, interaction: discord.Integration, button: discord.ui.Button):
     self.fish_to_sell = self.fish_data[1]
     self.update_buttons()
 
-    await self.create_embed(interaction)
+    await self.create_embed(interaction) # type: ignore
 
 
   @discord.ui.button(label="sell", style=discord.ButtonStyle.green)
@@ -177,7 +177,8 @@ class SellingView(ui.View):
     coins_earned = self.fish_data[0].base_value * self.fish_to_sell
     self.user.coins += coins_earned
 
-    rod: Rod = self.bot.db.get_user_rod(member_id= self.member_id, guild_id= self.guild_id)
+    rod = self.bot.db.get_user_rod(member_id= self.member_id, guild_id= self.guild_id)
+    assert rod is not None
 
     xp_earned = math.floor(self.fish_data[0].xp * self.fish_to_sell * rod.xp_multiplier)
     total_levels, total_coins = self.bot.db.add_xp(guild_id=self.guild_id, member_id=self.member_id, xp=xp_earned, user=self.user)
@@ -206,16 +207,22 @@ class FishingActions(commands.Cog):
     self.bot = bot
 
   @app_commands.command(name='inventory', description='Look at your fish and rod!')
+  @app_commands.guild_only()
   async def inventory(self, interaction: discord.Interaction):
     guildid = interaction.guild_id
     memberid = interaction.user.id
+
+    assert guildid is not None
+    assert memberid is not None
 
     self.bot.db.ensure_guild(guildid)
 
     _ = self.bot.db.ensure_user(memberid, guildid)
 
-    rod: Rod = self.bot.db.get_user_rod(memberid, guildid)
-    fish: list[(Fish, int)] = self.bot.db.get_all_user_fish(guildid, memberid)
+    rod = self.bot.db.get_user_rod(memberid, guildid)
+    assert rod is not None
+
+    fish = self.bot.db.get_all_user_fish(guildid, memberid)
 
     paginator = InventoryPaginator(data=fish, rod=rod)
     first_page_entries = paginator.get_current_page_data()
@@ -228,7 +235,11 @@ class FishingActions(commands.Cog):
     guildid = interaction.guild_id
     memberid = interaction.user.id
 
+    assert guildid is not None
+    assert memberid is not None
+
     inventory = self.bot.db.get_all_user_fish(guildid, memberid)
+    assert inventory is not None
 
     choices = []
     for fish_obj, count in inventory:
@@ -244,16 +255,21 @@ class FishingActions(commands.Cog):
 
 
   @app_commands.command(name='sell', description='Sell your unwanted fish!')
+  @app_commands.guild_only()
   @app_commands.autocomplete(fish=fish_autocomplete)
   async def sell(self, interaction: discord.Interaction, fish: str):
     guild_id = interaction.guild_id
     member_id = interaction.user.id
 
+    assert guild_id is not None
+
     self.bot.db.ensure_guild(guild_id)
 
-    user: FUser = self.bot.db.ensure_user(member_id, guild_id)
+    user = self.bot.db.ensure_user(member_id, guild_id)
+    assert user is not None
 
     fish_data = self.bot.db.get_user_fish(guild_id, member_id, int(fish))
+    assert fish_data is not None
 
     embed = discord.Embed(
       title='Fish MegaMart!',
@@ -261,10 +277,10 @@ class FishingActions(commands.Cog):
       colour=discord.Colour.gold()
     )
 
-    view = SellingView(fish_id=fish, member_id=member_id, guild_id=guild_id, bot=self.bot, fish_data=fish_data, user=user)
+    view = SellingView(fish_id=int(fish), member_id=member_id, guild_id=guild_id, bot=self.bot, fish_data=fish_data, user=user)
 
     await interaction.response.send_message(embed=embed, view=view)
 
 
 async def setup(bot: commands.Bot):
-  await bot.add_cog(FishingActions(bot))
+  await bot.add_cog(FishingActions(bot)) # type: ignore
