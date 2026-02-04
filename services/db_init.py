@@ -9,6 +9,11 @@ from models.rod import Rod
 from services.fish_service import FishService
 from util.weighted_random import WeightedRandom
 
+import logging
+
+
+LOGGER = logging.getLogger('FisherCat.DatabaseInitialisation')
+
 
 def drop_tables(conn: sqlite3.Connection) -> bool:
   '''
@@ -16,7 +21,7 @@ def drop_tables(conn: sqlite3.Connection) -> bool:
   '''
 
   if not conn:
-    print('ERROR: No connection provided.', file=sys.stderr)
+    LOGGER.error('No connection provided.', file=sys.stderr)
     return False
 
   try:
@@ -26,18 +31,17 @@ def drop_tables(conn: sqlite3.Connection) -> bool:
 
     for table_name in tables:
       cursor.execute(f'DROP TABLE IF EXISTS {table_name[0]};')
-      print(f'Dropped table: {table_name[0]}')
 
     conn.commit()
     return True
   except sqlite3.Error as e:
-    print(f'ERROR: Failed to drop tables: {e}', file=sys.stderr)
+    LOGGER.error(f'Failed to drop tables: {e}')
     return False
 
 
 def initialize_database(conn: sqlite3.Connection) -> bool:
   if not conn:
-    print("ERROR: No connection provided.", file=sys.stderr)
+    LOGGER.error("No connection provided.")
     return False
 
   try:
@@ -127,24 +131,24 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
     """)
 
     conn.commit()
-    print("Tables created successfully.")
+    LOGGER.info("Tables created successfully.")
     return True
 
   except sqlite3.Error as e:
-    print(f"ERROR: Could not create default tables: {e}", file=sys.stderr)
+    LOGGER.error(f"Could not create default tables: {e}")
     return False
 
 
 def import_fish(conn: sqlite3.Connection, fish_service: FishService):
   if not conn:
-    print("ERROR: No connection provided.", file=sys.stderr)
+    LOGGER.error("No connection provided.")
     return False
 
   try:
     with open('./data/fish.json', 'r') as f:
       fish_data = json.load(f)
   except FileNotFoundError:
-    print("ERROR: fish.json not found.", file=sys.stderr)
+    LOGGER.error("fish.json not found.")
     return False
 
   cursor = conn.cursor()
@@ -157,6 +161,8 @@ def import_fish(conn: sqlite3.Connection, fish_service: FishService):
       """, (f['name'], f['xp'], f['rarity'], f['odds'], f['area'], f['base_value']))
 
       generated_id = cursor.lastrowid
+      if generated_id is None:
+        return False
 
       fish = Fish(
         id=generated_id,
@@ -171,23 +177,23 @@ def import_fish(conn: sqlite3.Connection, fish_service: FishService):
       fish_service.fish.append(fish)
 
       fish_area: WeightedRandom = getattr(fish_service, fish.area.name)
-      fish_area.add(fish, 1 / fish.odds)
+      fish_area.add(fish, 1 / fish.odds) # type: ignore
 
     conn.commit()
-    print(f"Successfully imported {len(fish_data['fish_data'])} fish.")
+    LOGGER.info(f"Successfully imported {len(fish_data['fish_data'])} fish.")
     return True
 
   except sqlite3.Error as e:
-    print(f"Database error during import: {e}", file=sys.stderr)
+    LOGGER.error(f"Database error during import: {e}")
     return False
   except KeyError as e:
-    print(f"JSON Data Error: Missing key {e}", file=sys.stderr)
+    LOGGER.error(f"JSON Data Error: Missing key {e}")
     return False
 
 
 def load_existing_fish(conn: sqlite3.Connection, fish_service: FishService) -> bool:
   if not conn:
-    print("ERROR: No connection provided.", file=sys.stderr)
+    LOGGER.error("No connection provided.")
     return False
 
   cursor = conn.cursor()
@@ -214,33 +220,33 @@ def load_existing_fish(conn: sqlite3.Connection, fish_service: FishService) -> b
 
       if hasattr(fish_service, fish.area.name):
         fish_area: WeightedRandom = getattr(fish_service, fish.area.name)
-        fish_area.add(fish, 1 / fish.odds)
+        fish_area.add(fish, int(1 / fish.odds))
       else:
-        print(f"Warning: FishService missing area attribute '{fish.area.name}'")
+        LOGGER.warning(f"FishService missing area attribute '{fish.area.name}'")
 
       count += 1
 
-    print(f"Successfully loaded {count} fish from database into memory.")
+    LOGGER.info(f"Successfully loaded {count} fish from database into memory.")
     return True
 
   except sqlite3.Error as e:
-    print(f"Database error during load: {e}", file=sys.stderr)
+    LOGGER.error(f"Database error during fish load: {e}")
     return False
   except KeyError as e:
-    print(f"Enum Conversion Error: Database contains invalid key {e}", file=sys.stderr)
+    LOGGER.error(f"Enum Conversion Error: Database contains invalid key {e}")
     return False
 
 
 def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
   if not conn:
-    print("ERROR: No connection provided.")
+    LOGGER.error("No connection provided.")
     return False
 
   try:
     with open('./data/rods.json', 'r') as f:
       rod_data = json.load(f)
   except FileNotFoundError:
-    print("ERROR: rods.json not found.", file=sys.stderr)
+    LOGGER.error("rods.json not found.")
     return False
 
   cursor = conn.cursor()
@@ -253,6 +259,8 @@ def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
       ''', (r['name'], r['description'], r['value'], r['level_required'], r['xp_multiplier'], r['min_catch'], r['max_catch'], r['line_break_chance']))
 
       generated_id = cursor.lastrowid
+      if generated_id is None:
+        return False
 
       fish_service.rods.append(
         Rod(
@@ -268,16 +276,16 @@ def import_rods(conn: sqlite3.Connection, fish_service: FishService) -> bool:
       )
 
     conn.commit()
-    print(f'Sucessfully imported {len(rod_data['rod_data'])} rods.')
+    LOGGER.info(f'Sucessfully imported {len(rod_data['rod_data'])} rods.')
     return True
   except sqlite3.Error as e:
-    print(f"Database error during load: {e}", file=sys.stderr)
+    LOGGER.error(f"Database error rod during load: {e}")
     return False
 
 
 def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
   if not conn:
-    print('ERROR: no connection provided.', file=sys.stderr)
+    LOGGER.error('No connection provided.')
     return False
 
   cursor = conn.cursor()
@@ -304,9 +312,9 @@ def load_existing_rods(conn: sqlite3.Connection, fish_service: FishService):
 
       count += 1
 
-    print(f'Sucessfully imported {count} rods.')
+    LOGGER.info(f'Sucessfully imported {count} rods.')
     return True
 
   except sqlite3.Error as e:
-    print(f'Error importing rods: {e}')
+    LOGGER.error(f'Error importing rods: {e}')
     return False

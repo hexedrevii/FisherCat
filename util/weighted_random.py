@@ -20,7 +20,7 @@ class WeightedRandom:
     self.cummulative_weight.append(self.total_weight)
 
 
-  def get(self) -> Any|None:
+  def get(self) -> Any:
     if not self.items: return None
 
     rnd_point = random.uniform(0, self.total_weight)

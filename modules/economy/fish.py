@@ -23,12 +23,19 @@ class Fishing(commands.Cog):
 
 
   @app_commands.command(name="fish", description="Go fishing to catch some fish!")
+  @app_commands.guild_only()
   async def fish(self, interaction: discord.Interaction, area: Area):
+    assert interaction.guild is not None
+
     guildid: int = interaction.guild.id
     memberid: int = interaction.user.id
 
+    assert guildid is not None
+    assert memberid is not None
+
     self.bot.db.ensure_guild(guildid)
     user = self.bot.db.ensure_user(memberid, guildid)
+    assert user is not None
 
     user_found = False
     for (id, stamp) in self.user_cooldowns:
@@ -50,7 +57,8 @@ class Fishing(commands.Cog):
     caught_fish: list[Fish] = []
     fish: WeightedRandom = getattr(self.bot.fish_service, area.name)
 
-    rod: Rod = self.bot.db.get_user_rod(memberid, guildid)
+    rod = self.bot.db.get_user_rod(memberid, guildid)
+    assert rod is not None
 
     fish_count = random.randint(rod.min_catch, rod.max_catch)
     escaped = 0
@@ -86,4 +94,4 @@ class Fishing(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-  await bot.add_cog(Fishing(bot))
+  await bot.add_cog(Fishing(bot)) # type: ignore

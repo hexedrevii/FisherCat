@@ -16,13 +16,18 @@ class UserActions(commands.Cog):
 
 
   @app_commands.command(name='stats', description='Show off yout stats!')
+  @app_commands.guild_only()
   async def stats(self, interaction: discord.Interaction):
     member_id = interaction.user.id
     guild_id = interaction.guild_id
 
+    assert member_id is not None
+    assert guild_id is not None
+
     self.bot.db.ensure_guild(guild_id)
 
-    user: FUser = self.bot.db.ensure_user(member_id, guild_id)
+    user = self.bot.db.ensure_user(member_id, guild_id)
+    assert user is not None
 
     daily_status = "Ready!"
 
@@ -51,13 +56,18 @@ class UserActions(commands.Cog):
 
 
   @app_commands.command(name='daily', description='Claim your daily reward!')
+  @app_commands.guild_only()
   async def daily(self, interaction: discord.Interaction):
     guild_id = interaction.guild_id
     member_id = interaction.user.id
 
+    assert guild_id is not None
+    assert member_id is not None
+
     self.bot.db.ensure_guild(guild_id)
 
-    user: FUser = self.bot.db.ensure_user(member_id= member_id, guild_id= guild_id)
+    user = self.bot.db.ensure_user(member_id= member_id, guild_id= guild_id)
+    assert user is not None
 
     # Check if ready
     now = datetime.now()
@@ -73,7 +83,7 @@ class UserActions(commands.Cog):
       minutes, seconds = divmod(remainder, 60)
 
       daily_status = f"{hours}h {minutes}m {seconds}s"
-      embed.description += f"\nPlease wait another {daily_status}"
+      embed.description = (embed.description or "") + f"\nPlease wait another {daily_status}"
 
       embed.set_footer(text=f'Requested by {interaction.user.name}', icon_url=interaction.user.avatar)
 
@@ -101,4 +111,4 @@ class UserActions(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-  await bot.add_cog(UserActions(bot))
+  await bot.add_cog(UserActions(bot)) # type: ignore

@@ -3,6 +3,7 @@ import discord
 import os
 import sys
 import math
+import logging
 
 from discord.ext import commands
 
@@ -18,6 +19,8 @@ from services.fish_service import FishService
 # Set to True to drop all tables and reinitialize the database on startup.
 DELETE_DEFAULTS: bool = True
 
+discord.utils.setup_logging(root=True)
+
 
 class FisherBot(commands.Bot):
   def __init__(self, dbpath):
@@ -31,19 +34,22 @@ class FisherBot(commands.Bot):
     self.message_cooldowns = []
     self.message_cooldown_time = 2
 
-    print("Connecting to database.")
+    self.logger = logging.getLogger('FisherCat')
+
+    self.logger.info("Connecting to database.")
     self.connection = sqlite3.connect(dbpath)
     self.connection.row_factory = sqlite3.Row
+
 
     if DELETE_DEFAULTS:
       from services.db_init import drop_tables, initialize_database, import_fish, import_rods
 
       if drop_tables(self.connection):
-        print("Dropped existing tables.")
+        self.logger.info("Dropped existing tables.")
       else: sys.exit(1)
 
       if initialize_database(self.connection):
-        print("Initialized database.")
+        self.logger.info("Initialized database.")
       else: sys.exit(1)
 
       if not import_fish(self.connection, self.fish_service): sys.exit(1)
@@ -57,7 +63,7 @@ class FisherBot(commands.Bot):
 
 
   async def on_ready(self):
-    print(f'Logged in as {self.user.name} - {self.user.id}')
+    self.logger.info(f'Logged in as {self.user.name} - {self.user.id}') # type: ignore
 
 
   async def on_message(self, message: discord.Message):
@@ -66,7 +72,8 @@ class FisherBot(commands.Bot):
 
     self.db.ensure_guild(message.guild.id)
 
-    user: FUser = self.db.ensure_user(message.author.id, message.guild.id)
+    user = self.db.ensure_user(message.author.id, message.guild.id)
+    if user is None: return
 
     user_found = False
     for (id, stamp) in self.message_cooldowns:
@@ -116,13 +123,13 @@ class FisherBot(commands.Bot):
 
           try:
             await self.load_extension(f'modules.{path}')
-            print(f'Loaded module: {path}')
+            self.logger.info(f'Loaded module: {path}')
           except Exception as e:
-            print(f'Failed to load module {path}: {e}')
+            self.logger.error(f'Failed to load module {path}: {e}')
 
-    print('Syncing.')
+    self.logger.info('Syncing.')
     try:
       synced = await self.tree.sync()
-      print(f"Synced {len(synced)} command(s) globally.")
+      self.logger.info(f"Synced {len(synced)} command(s) globally.")
     except Exception as e:
-      print(f"Failed to sync commands: {e}")
+      self.logger.error(f"Failed to sync commands: {e}")
