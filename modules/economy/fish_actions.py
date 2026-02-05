@@ -178,7 +178,6 @@ class SellingView(ui.View):
     self.user.coins += coins_earned
 
     rod = self.bot.db.get_user_rod(member_id= self.member_id, guild_id= self.guild_id)
-    assert rod is not None
 
     xp_earned = math.floor(self.fish_data[0].xp * self.fish_to_sell * rod.xp_multiplier)
     total_levels, total_coins = self.bot.db.add_xp(guild_id=self.guild_id, member_id=self.member_id, xp=xp_earned, user=self.user)
@@ -209,20 +208,14 @@ class FishingActions(commands.Cog):
   @app_commands.command(name='inventory', description='Look at your fish and rod!')
   @app_commands.guild_only()
   async def inventory(self, interaction: discord.Interaction):
-    guildid = interaction.guild_id
-    memberid = interaction.user.id
+    guild_id, member_id = self.bot.get_guildmember_ids(interaction)
 
-    assert guildid is not None
-    assert memberid is not None
+    self.bot.db.ensure_guild(guild_id)
 
-    self.bot.db.ensure_guild(guildid)
+    _ = self.bot.db.ensure_user(member_id, guild_id)
 
-    _ = self.bot.db.ensure_user(memberid, guildid)
-
-    rod = self.bot.db.get_user_rod(memberid, guildid)
-    assert rod is not None
-
-    fish = self.bot.db.get_all_user_fish(guildid, memberid)
+    rod = self.bot.db.get_user_rod(member_id, guild_id)
+    fish = self.bot.db.get_all_user_fish(guild_id, member_id)
 
     paginator = InventoryPaginator(data=fish, rod=rod)
     first_page_entries = paginator.get_current_page_data()
@@ -232,14 +225,9 @@ class FishingActions(commands.Cog):
 
 
   async def fish_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
-    guildid = interaction.guild_id
-    memberid = interaction.user.id
+    (guild_id, member_id) = self.bot.get_guildmember_ids(interaction)
 
-    assert guildid is not None
-    assert memberid is not None
-
-    inventory = self.bot.db.get_all_user_fish(guildid, memberid)
-    assert inventory is not None
+    inventory = self.bot.db.get_all_user_fish(guild_id, member_id)
 
     choices = []
     for fish_obj, count in inventory:
@@ -258,18 +246,12 @@ class FishingActions(commands.Cog):
   @app_commands.guild_only()
   @app_commands.autocomplete(fish=fish_autocomplete)
   async def sell(self, interaction: discord.Interaction, fish: str):
-    guild_id = interaction.guild_id
-    member_id = interaction.user.id
-
-    assert guild_id is not None
+    guild_id, member_id = self.bot.get_guildmember_ids(interaction)
 
     self.bot.db.ensure_guild(guild_id)
-
     user = self.bot.db.ensure_user(member_id, guild_id)
-    assert user is not None
 
     fish_data = self.bot.db.get_user_fish(guild_id, member_id, int(fish))
-    assert fish_data is not None
 
     embed = discord.Embed(
       title='Fish MegaMart!',

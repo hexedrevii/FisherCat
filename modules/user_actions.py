@@ -18,16 +18,11 @@ class UserActions(commands.Cog):
   @app_commands.command(name='stats', description='Show off yout stats!')
   @app_commands.guild_only()
   async def stats(self, interaction: discord.Interaction):
-    member_id = interaction.user.id
-    guild_id = interaction.guild_id
-
-    assert member_id is not None
-    assert guild_id is not None
+    guild_id, member_id = self.bot.get_guildmember_ids(interaction)
 
     self.bot.db.ensure_guild(guild_id)
 
     user = self.bot.db.ensure_user(member_id, guild_id)
-    assert user is not None
 
     daily_status = "Ready!"
 
@@ -58,16 +53,11 @@ class UserActions(commands.Cog):
   @app_commands.command(name='daily', description='Claim your daily reward!')
   @app_commands.guild_only()
   async def daily(self, interaction: discord.Interaction):
-    guild_id = interaction.guild_id
-    member_id = interaction.user.id
-
-    assert guild_id is not None
-    assert member_id is not None
+    guild_id, member_id = self.bot.get_guildmember_ids(interaction)
 
     self.bot.db.ensure_guild(guild_id)
 
     user = self.bot.db.ensure_user(member_id= member_id, guild_id= guild_id)
-    assert user is not None
 
     # Check if ready
     now = datetime.now()
