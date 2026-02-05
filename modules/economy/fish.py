@@ -25,21 +25,15 @@ class Fishing(commands.Cog):
   @app_commands.command(name="fish", description="Go fishing to catch some fish!")
   @app_commands.guild_only()
   async def fish(self, interaction: discord.Interaction, area: Area):
-    assert interaction.guild is not None
+    guild_id, member_id = self.bot.get_guildmember_ids(interaction)
 
-    guildid: int = interaction.guild.id
-    memberid: int = interaction.user.id
 
-    assert guildid is not None
-    assert memberid is not None
-
-    self.bot.db.ensure_guild(guildid)
-    user = self.bot.db.ensure_user(memberid, guildid)
-    assert user is not None
+    self.bot.db.ensure_guild(guild_id)
+    user = self.bot.db.ensure_user(member_id, guild_id)
 
     user_found = False
     for (id, stamp) in self.user_cooldowns:
-      if id == memberid:
+      if id == member_id:
         user_found = True
 
         # Check if cooldown is gone.
@@ -52,13 +46,12 @@ class Fishing(commands.Cog):
           break
 
     if not user_found:
-      self.user_cooldowns.append((memberid, datetime.datetime.now()))
+      self.user_cooldowns.append((member_id, datetime.datetime.now()))
 
     caught_fish: list[Fish] = []
     fish: WeightedRandom = getattr(self.bot.fish_service, area.name)
 
-    rod = self.bot.db.get_user_rod(memberid, guildid)
-    assert rod is not None
+    rod = self.bot.db.get_user_rod(member_id, guild_id)
 
     fish_count = random.randint(rod.min_catch, rod.max_catch)
     escaped = 0
@@ -76,7 +69,7 @@ class Fishing(commands.Cog):
     summary_parts = []
     for (fish_id, fish_name, fish_rarity), count in ordered_fish_count.items():
       summary_parts.append(f"{count}x {fish_name} ({fish_rarity.name.title()})")
-      self.bot.db.add_fish(guildid, memberid, fish_id, count)
+      self.bot.db.add_fish(guild_id, member_id, fish_id, count)
 
     summary = "\n".join(summary_parts)
     if escaped != 0:

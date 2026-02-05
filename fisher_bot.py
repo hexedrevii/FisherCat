@@ -1,4 +1,5 @@
 import datetime
+from typing import Tuple
 import discord
 import os
 import sys
@@ -62,6 +63,25 @@ class FisherBot(commands.Bot):
     self.db = DbService(self.connection)
 
 
+  async def on_tree_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    if isinstance(error, discord.app_commands.CommandOnCooldown):
+      await interaction.response.send_message(f"Cooldown! Try again in {error.retry_after:.2f}s", ephemeral=True)
+      return
+
+    embed = discord.Embed(
+      title="Error",
+      description=f"Something went wrong!\n```{error}```",
+      color=discord.Color.red()
+    )
+
+    if interaction.response.is_done():
+      await interaction.followup.send(embed=embed, ephemeral=True)
+    else:
+      await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    self.logger.error("Ignoring exception in command tree:", exc_info=error)
+
+
   async def on_ready(self):
     self.logger.info(f'Logged in as {self.user.name} - {self.user.id}') # type: ignore
 
@@ -113,6 +133,8 @@ class FisherBot(commands.Bot):
 
 
   async def setup_hook(self):
+    self.tree.on_error = self.on_tree_error
+
     for root, dirs, files in os.walk('modules'):
       for file in files:
         if file.endswith('.py'):
@@ -133,3 +155,13 @@ class FisherBot(commands.Bot):
       self.logger.info(f"Synced {len(synced)} command(s) globally.")
     except Exception as e:
       self.logger.error(f"Failed to sync commands: {e}")
+
+
+  def get_guildmember_ids(self, interaction: discord.Interaction) -> Tuple[int, int]:
+    guildid = interaction.guild_id
+    memberid = interaction.user.id
+
+    if guildid is None: raise ValueError('Guild ID was not found!')
+    if memberid is None: raise ValueError('Member ID was not found!')
+
+    return (guildid, memberid)
