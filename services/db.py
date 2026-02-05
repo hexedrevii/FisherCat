@@ -1,7 +1,7 @@
 import sqlite3
 import math
 import logging
-from typing import Optional, List, Tuple
+from typing import List, Tuple
 from datetime import datetime
 
 from models.area import Area
@@ -11,6 +11,7 @@ from models.rarity import Rarity
 from models.rod import Rod
 
 LOGGER = logging.getLogger('FisherCat.DbService')
+
 
 class DbService:
   def __init__(self, connection: sqlite3.Connection):
@@ -25,7 +26,6 @@ class DbService:
     self.COIN_REWARD: int = 50
     self.COIN_REWARD_INCREASE: float = 12.7
 
-
   def ensure_guild(self, guild_id: int) -> None:
     """
     Enrolls a guild in the database.
@@ -33,14 +33,15 @@ class DbService:
     cursor = self.connection.cursor()
 
     # Check if the guild is already there.
-    guild_exists = cursor.execute("SELECT 1 FROM guild WHERE id = ?", (guild_id,)).fetchone()
+    guild_exists = cursor.execute(
+      'SELECT 1 FROM guild WHERE id = ?', (guild_id,)
+    ).fetchone()
     if guild_exists:
       return
 
     with self.connection:
-      cursor.execute("INSERT OR IGNORE INTO guild (id) VALUES (?)", (guild_id,))
-      LOGGER.info(f"Enrolled guild: {guild_id}")
-
+      cursor.execute('INSERT OR IGNORE INTO guild (id) VALUES (?)', (guild_id,))
+      LOGGER.info(f'Enrolled guild: {guild_id}')
 
   def ensure_user(self, member_id: int, guild_id: int) -> FUser:
     """
@@ -48,9 +49,12 @@ class DbService:
     """
     cursor = self.connection.cursor()
 
-    result = cursor.execute("""
+    result = cursor.execute(
+      """
       SELECT * FROM guildmember WHERE guildid = ? AND memberid = ?;
-    """, (guild_id, member_id)).fetchone()
+    """,
+      (guild_id, member_id),
+    ).fetchone()
 
     if result is not None:
       # User exists, fill up the fuser and return.
@@ -60,22 +64,28 @@ class DbService:
       db_user.xp_step = result['xpstep']
       db_user.xp_next = result['xpnext']
       db_user.level = result['level']
-      db_user.lastclaimed = datetime.strptime(result['lastclaimed'], '%Y-%m-%d %H:%M:%S')
+      db_user.lastclaimed = datetime.strptime(
+        result['lastclaimed'], '%Y-%m-%d %H:%M:%S'
+      )
       db_user.fishing_cooldown = result['fishingcooldown']
       return db_user
 
     # User does not exist, enroll them.
     with self.connection:
-      cursor.execute("INSERT INTO member (id) VALUES (?);", (member_id,))
-      cursor.execute("""
+      cursor.execute('INSERT INTO member (id) VALUES (?);', (member_id,))
+      cursor.execute(
+        """
         INSERT INTO guildmember (guildid, memberid) VALUES (?, ?)
         ON CONFLICT DO NOTHING;
-      """, (guild_id, member_id))
+      """,
+        (guild_id, member_id),
+      )
 
     return FUser()
 
-
-  def add_xp(self, guild_id: int, member_id: int, xp: int, user: FUser) -> Tuple[int, int]:
+  def add_xp(
+    self, guild_id: int, member_id: int, xp: int, user: FUser
+  ) -> Tuple[int, int]:
     user.xp += xp
     total_coins = 0
     total_levels = 0
@@ -94,33 +104,41 @@ class DbService:
           if user.level % 10 == 0:
             user.xp_step += 1
 
-        user.xp_next = math.floor(math.pow(user.level / self.LEVEL_INCREASE, self.LEVEL_GAP))
+        user.xp_next = math.floor(
+          math.pow(user.level / self.LEVEL_INCREASE, self.LEVEL_GAP)
+        )
 
     self.update_user(guild_id=guild_id, member_id=member_id, user=user)
     return (total_levels, total_coins)
 
-
-  def add_fish(self, guild_id: int, member_id: int, fish_id: int, fish_amount: int = 1) -> None:
+  def add_fish(
+    self, guild_id: int, member_id: int, fish_id: int, fish_amount: int = 1
+  ) -> None:
     """
     Update player inventory with new fish.
     """
     with self.connection:
-      self.connection.execute(f"""
+      self.connection.execute(
+        f"""
         INSERT INTO inventory (guildid, memberid, fishid, amount) VALUES (?, ?, ?, ?)
         ON CONFLICT(guildid, memberid, fishid) DO UPDATE SET amount = amount + {fish_amount};
-      """, (guild_id, member_id, fish_id, fish_amount))
-
+      """,
+        (guild_id, member_id, fish_id, fish_amount),
+      )
 
   def get_all_user_fish(self, guild_id: int, member_id: int) -> List[Tuple[Fish, int]]:
     """
     Returns a list of tuples, containing the fish on the left and the amount of it on the right.
     """
     cursor = self.connection.cursor()
-    cursor.execute("""
+    cursor.execute(
+      """
       SELECT i.amount, f.* FROM inventory i
       JOIN fish f ON i.fishid = f.id
       WHERE i.guildid = ? AND i.memberid = ?;
-    """, (guild_id, member_id))
+    """,
+      (guild_id, member_id),
+    )
 
     rows = cursor.fetchall()
     fish_data: List[Tuple[Fish, int]] = []
@@ -133,20 +151,24 @@ class DbService:
         rarity=Rarity[row['rarity']],
         odds=row['odds'],
         area=Area[row['area']],
-        base_value=row['base_value']
+        base_value=row['base_value'],
       )
       fish_data.append((fish, row['amount']))
 
     return fish_data
 
-
-  def get_user_fish(self, guild_id: int, member_id: int, fish_id: int) -> Tuple[Fish, int]:
+  def get_user_fish(
+    self, guild_id: int, member_id: int, fish_id: int
+  ) -> Tuple[Fish, int]:
     cursor = self.connection.cursor()
-    cursor.execute("""
+    cursor.execute(
+      """
       SELECT i.amount, f.* FROM inventory i
       INNER JOIN fish f ON i.fishid = f.id
       WHERE i.memberid = ? AND i.guildid = ? AND i.fishid = ?;
-    """, (member_id, guild_id, fish_id))
+    """,
+      (member_id, guild_id, fish_id),
+    )
 
     row = cursor.fetchone()
 
@@ -157,25 +179,31 @@ class DbService:
       rarity=Rarity[row['rarity']],
       odds=row['odds'],
       area=Area[row['area']],
-      base_value=row['base_value']
+      base_value=row['base_value'],
     )
     return (fish, int(row['amount']))
 
-
-  def update_user_fish(self, member_id: int, guild_id: int, fish_id: int, count: int) -> None:
+  def update_user_fish(
+    self, member_id: int, guild_id: int, fish_id: int, count: int
+  ) -> None:
     with self.connection:
       if count <= 0:
-        self.connection.execute("""
+        self.connection.execute(
+          """
           DELETE FROM inventory
           WHERE fishid = ? AND memberid = ? AND guildid = ?
-        """, (fish_id, member_id, guild_id))
+        """,
+          (fish_id, member_id, guild_id),
+        )
       else:
-        self.connection.execute("""
+        self.connection.execute(
+          """
           UPDATE inventory
           SET amount = ?
           WHERE fishid = ? AND memberid = ? AND guildid = ?;
-        """, (count, fish_id, member_id, guild_id))
-
+        """,
+          (count, fish_id, member_id, guild_id),
+        )
 
   def get_user_rod(self, member_id: int, guild_id: int) -> Rod:
     cursor = self.connection.cursor()
@@ -199,9 +227,8 @@ class DbService:
       xp_multiplier=dbrod['xpmultiplier'],
       min_catch=dbrod['mincatch'],
       max_catch=dbrod['maxcatch'],
-      line_break_chance=dbrod['linebreakchance']
+      line_break_chance=dbrod['linebreakchance'],
     )
-
 
   def update_user(self, guild_id: int, member_id: int, user: FUser) -> None:
     query = """
@@ -225,7 +252,7 @@ class DbService:
       user.lastclaimed.strftime('%Y-%m-%d %H:%M:%S'),
       user.fishing_cooldown,
       guild_id,
-      member_id
+      member_id,
     )
 
     with self.connection:
