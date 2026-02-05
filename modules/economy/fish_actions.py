@@ -14,7 +14,7 @@ from util.paginator_view import PaginatorView
 
 
 class InventoryPaginator(PaginatorView):
-  def __init__(self, data, rod: Rod, per_page=5, timeout=60):
+  def __init__(self, data, rod: Rod, per_page=6, timeout=60):
     super().__init__(data, per_page=per_page, timeout=timeout, title="Inventory")
     self.rod = rod
 
@@ -22,15 +22,20 @@ class InventoryPaginator(PaginatorView):
   async def format_page(self, entries):
     embed = discord.Embed(title = "Inventory", colour=discord.Colour.blue())
 
-    desc = ''
-    for i, fish_data in enumerate(entries):
-      desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value} coins, {fish_data[0].xp} XP) [{fish_data[0].rarity.name.title()}]\n'
-
     embed.add_field(
-      name=f'Current rod: {self.rod.name} "{self.rod.description}"',
-      value=f'Fish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{("Value: {self.rod.value}\n" if self.rod.value != 0 else '')}\nXP Multiplier: {self.rod.xp_multiplier}',
+      name=f'{self.rod.name}',
+      value=f'*"{self.rod.description}"*\n\nFish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{("Value: {self.rod.value}\n" if self.rod.value != 0 else '')}\nXP Multiplier: {self.rod.xp_multiplier}',
       inline=False
     )
+
+    desc = ''
+    if type(entries[0]) is int:
+      desc = 'Nothing to see here... yet!'
+    else:
+      for i, fish_data in enumerate(entries):
+        fish: Fish = fish_data[0]
+        # desc += f'{fish_data[0].name.title()} x{fish_data[1]} (value of {fish_data[0].base_value} coins, {fish_data[0].xp} XP) [{fish_data[0].rarity.name.title()}]\n'
+        embed.add_field(name=f'{fish.name} x{fish_data[1]}', value=f'Value: {fish.base_value} XP: {fish.xp}\n**{fish.rarity.name.title()}**', inline=True)
 
     embed.description = desc
 
@@ -216,6 +221,8 @@ class FishingActions(commands.Cog):
 
     rod = self.bot.db.get_user_rod(member_id, guild_id)
     fish = self.bot.db.get_all_user_fish(guild_id, member_id)
+    if fish == []:
+      fish = [-1]
 
     paginator = InventoryPaginator(data=fish, rod=rod)
     first_page_entries = paginator.get_current_page_data()

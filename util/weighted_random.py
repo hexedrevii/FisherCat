@@ -10,7 +10,7 @@ class WeightedRandom:
     self.total_weight = 0
 
 
-  def add(self, item: Any, weight: int) -> None:
+  def add(self, item: Any, weight: float) -> None:
     if weight <= 0:
       raise ValueError('weight must be positive.')
 
