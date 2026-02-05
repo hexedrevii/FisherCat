@@ -18,7 +18,7 @@ from services.fish_service import FishService
 
 
 # Set to True to drop all tables and reinitialize the database on startup.
-DELETE_DEFAULTS: bool = True
+DELETE_DEFAULTS: bool = False
 
 discord.utils.setup_logging(root=True)
 

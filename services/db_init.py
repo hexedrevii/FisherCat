@@ -177,8 +177,11 @@ def import_fish(conn: sqlite3.Connection, fish_service: FishService):
       fish_service.fish.append(fish)
 
       fish_area: WeightedRandom = getattr(fish_service, fish.area.name)
-      fish_area.add(fish, 1 / fish.odds) # type: ignore
-
+      try:
+        fish_area.add(fish, 1 / fish.odds)
+      except ValueError as e:
+        LOGGER.error(f'Failed adding fish {fish.name} (1/{fish.odds}) to {fish.area.name}: {e}')
+        sys.exit(1)
     conn.commit()
     LOGGER.info(f"Successfully imported {len(fish_data['fish_data'])} fish.")
     return True
@@ -220,7 +223,12 @@ def load_existing_fish(conn: sqlite3.Connection, fish_service: FishService) -> b
 
       if hasattr(fish_service, fish.area.name):
         fish_area: WeightedRandom = getattr(fish_service, fish.area.name)
-        fish_area.add(fish, int(1 / fish.odds))
+
+        try:
+          fish_area.add(fish, 1 / fish.odds)
+        except ValueError as e:
+          LOGGER.error(f'Failed adding fish {fish.name} (1/{fish.odds}) to {fish.area.name}: {e}')
+          sys.exit(1)
       else:
         LOGGER.warning(f"FishService missing area attribute '{fish.area.name}'")
 
