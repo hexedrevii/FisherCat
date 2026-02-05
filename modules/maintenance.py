@@ -10,8 +10,7 @@ class Maintenance(commands.Cog):
   def __init__(self, bot: FisherBot):
     self.bot = bot
 
-
-  @app_commands.command(name="ping", description="Check the bot's latency.")
+  @app_commands.command(name='ping', description="Check the bot's latency.")
   @app_commands.guild_only()
   async def ping(self, interaction: discord.Interaction):
     latency = round(self.bot.latency * 1000)
@@ -19,4 +18,4 @@ class Maintenance(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-  await bot.add_cog(Maintenance(bot)) # type: ignore
+  await bot.add_cog(Maintenance(bot))  # type: ignore
