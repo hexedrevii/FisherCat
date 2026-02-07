@@ -105,8 +105,6 @@ class FisherBot(commands.Bot):
     self.db.ensure_guild(message.guild.id)
 
     user = self.db.ensure_user(message.author.id, message.guild.id)
-    if user is None:
-      return
 
     user_found = False
     for id, stamp in self.message_cooldowns:
@@ -124,27 +122,12 @@ class FisherBot(commands.Bot):
     if not user_found:
       self.message_cooldowns.append((message.author.id, datetime.datetime.now()))
 
-    user.xp += user.xp_step
-    if user.xp >= user.xp_next:
-      total_coins = 0
-      while user.xp >= user.xp_next:
-        user.xp -= user.xp_next
-
-        user.level += 1
-
-        reward = math.floor(
-          self.db.COIN_REWARD + (user.level * self.db.COIN_REWARD_INCREASE)
-        )
-
-        total_coins += reward
-        user.coins += reward
-
-        if user.level % 5 == 0:
-          user.xp_step += 5
-
-        user.xp_next = math.floor(
-          math.pow(user.level / self.db.LEVEL_INCREASE, self.db.LEVEL_GAP)
-        )
+      _, total_coins = self.db.add_xp(
+        guild_id=message.author.id,
+        member_id=message.guild.id,
+        xp=user.xp_next,
+        user=user,
+      )
 
       await message.channel.send(
         f'Congrats, {message.author.mention}! You leveled up and earned {total_coins} coins!'

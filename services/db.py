@@ -100,7 +100,7 @@ class DbService:
         total_coins += reward
         user.coins += reward
 
-        if user.xp_next != 0:
+        if user.xp_next != 5:
           if user.level % 10 == 0:
             user.xp_step += 1
 
