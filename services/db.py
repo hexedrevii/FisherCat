@@ -75,10 +75,17 @@ class DbService:
       cursor.execute('INSERT INTO member (id) VALUES (?);', (member_id,))
       cursor.execute(
         """
-        INSERT INTO guildmember (guildid, memberid) VALUES (?, ?)
-        ON CONFLICT DO NOTHING;
-      """,
+          INSERT INTO guildmember (guildid, memberid) VALUES (?, ?)
+          ON CONFLICT DO NOTHING;
+        """,
         (guild_id, member_id),
+      )
+
+      cursor.execute(
+        """
+        INSERT OR IGNORE INTO memberrod (guildid, memberid, rodid) VALUES (?, ?, ?)
+      """,
+        (guild_id, member_id, 1),
       )
 
     return FUser()
@@ -229,6 +236,59 @@ class DbService:
       max_catch=dbrod['maxcatch'],
       line_break_chance=dbrod['linebreakchance'],
     )
+
+  def get_user_rods(self, member_id: int, guild_id: int) -> List[Rod]:
+    cursor = self.connection.cursor()
+
+    cursor.execute(
+      """
+        SELECT
+        m.memberid, m.guildid, m.rodid,
+        r.id, r.name, r.description, r.value, r.levelrequired, r.xpmultiplier, r.mincatch, r.maxcatch, r.linebreakchance
+        FROM memberrod m
+        JOIN rod r ON m.rodid = r.id
+        WHERE m.guildid = ? AND m.memberid = ?;
+      """,
+      (guild_id, member_id),
+    )
+
+    rows = cursor.fetchall()
+    data = []
+
+    for dbrod in rows:
+      data.append(
+        Rod(
+          id=dbrod['id'],
+          name=dbrod['name'],
+          description=dbrod['description'],
+          value=dbrod['value'],
+          level_required=dbrod['levelrequired'],
+          xp_multiplier=dbrod['xpmultiplier'],
+          min_catch=dbrod['mincatch'],
+          max_catch=dbrod['maxcatch'],
+          line_break_chance=dbrod['linebreakchance'],
+        )
+      )
+
+    return data
+
+  def add_rod(self, member_id: int, guild_id: int, rod_id: int):
+    cursor = self.connection.cursor()
+
+    cursor.execute("""
+      INSERT OR IGNORE INTO memberrod (memberid, guildid, rodid) VALUES (?, ?, ?);
+    """, (member_id, guild_id, rod_id))
+
+    self.connection.commit()
+
+  def equip_rod(self, member_id: int, guild_id: int, rod_id: int):
+    cursor = self.connection.cursor()
+
+    cursor.execute("""
+      UPDATE guildmember SET rodid = ? WHERE memberid = ? AND guildid = ?;
+    """, (rod_id, member_id, guild_id))
+
+    self.connection.commit()
 
   def update_user(self, guild_id: int, member_id: int, user: FUser) -> None:
     query = """

@@ -4,7 +4,7 @@ import discord
 
 
 class PaginatorView(ui.View):
-  def __init__(self, data, per_page=5, timeout=60, title='results'):
+  def __init__(self, data, member_id: int, per_page=5, timeout=60, title='results'):
     super().__init__(timeout=timeout)
 
     self.data = data
@@ -12,10 +12,21 @@ class PaginatorView(ui.View):
     self.timeout = timeout
     self.title = title
 
+    self.member_id = member_id
+
     self.current_page = 0
     self.total_pages = (len(data) + self.per_page - 1) // self.per_page
 
     self.update_buttons()
+
+  async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    if interaction.user.id != self.member_id:
+        await interaction.response.send_message(
+            "This isn't your fishing shop! Use the command yourself to browse.",
+            ephemeral=True
+        )
+        return False
+    return True
 
   def update_buttons(self):
     self.children[0].disabled = self.current_page == 0  # type: ignore
@@ -43,6 +54,9 @@ class PaginatorView(ui.View):
   async def prev_button(
     self, interaction: discord.Interaction, button: discord.ui.Button
   ):
+    if not await self.interaction_check(interaction):
+      return
+
     self.current_page -= 1
     self.update_buttons()
     await self.update_message(interaction)
@@ -51,6 +65,9 @@ class PaginatorView(ui.View):
   async def next_button(
     self, interaction: discord.Interaction, button: discord.ui.Button
   ):
+    if not await self.interaction_check(interaction):
+      return
+
     self.current_page += 1
     self.update_buttons()
     await self.update_message(interaction)

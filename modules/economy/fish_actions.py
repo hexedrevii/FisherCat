@@ -14,8 +14,8 @@ from util.paginator_view import PaginatorView
 
 
 class InventoryPaginator(PaginatorView):
-  def __init__(self, data, rod: Rod, per_page=6, timeout=60):
-    super().__init__(data, per_page=per_page, timeout=timeout, title='Inventory')
+  def __init__(self, member_id: int, data, rod: Rod, per_page=6, timeout=60):
+    super().__init__(data, member_id, per_page=per_page, timeout=timeout, title='Inventory')
     self.rod = rod
 
   async def format_page(self, entries):
@@ -23,7 +23,7 @@ class InventoryPaginator(PaginatorView):
 
     embed.add_field(
       name=f'{self.rod.name}',
-      value=f'*"{self.rod.description}"*\n\nFish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{("Value: {self.rod.value}\n" if self.rod.value != 0 else "")}\nXP Multiplier: {self.rod.xp_multiplier}',
+      value=f'*"{self.rod.description}"*\n\nFish range: ({self.rod.min_catch}, {self.rod.max_catch})\nLine Break Chance: 1/{self.rod.line_break_chance}{(f"\nValue: {self.rod.value}" if self.rod.value != 0 else "")}\nXP Multiplier: {self.rod.xp_multiplier}',
       inline=False,
     )
 
@@ -70,6 +70,15 @@ class SellingView(ui.View):
 
     self.update_buttons()
 
+  async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    if interaction.user.id != self.member_id:
+        await interaction.response.send_message(
+            "This isn't your fishing shop! Use the command yourself to browse.",
+            ephemeral=True
+        )
+        return False
+    return True
+
   def update_buttons(self):
     self.children[0].disabled = self.fish_to_sell + 1 > self.fish_data[1]  # type: ignore
     self.children[1].disabled = self.fish_to_sell + 5 > self.fish_data[1]  # type: ignore
@@ -94,6 +103,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='+1', style=discord.ButtonStyle.blurple)
   async def sell_one(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell += 1
     self.update_buttons()
 
@@ -101,6 +113,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='+5', style=discord.ButtonStyle.blurple)
   async def sell_five(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell += 5
     self.update_buttons()
 
@@ -108,6 +123,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='+10', style=discord.ButtonStyle.blurple)
   async def sell_ten(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell += 10
     self.update_buttons()
 
@@ -115,6 +133,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='+50', style=discord.ButtonStyle.blurple)
   async def sell_fifty(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell += 50
     self.update_buttons()
 
@@ -122,6 +143,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='+100', style=discord.ButtonStyle.blurple)
   async def sell_onehunge(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell += 100
     self.update_buttons()
 
@@ -129,6 +153,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='-1', style=discord.ButtonStyle.blurple)
   async def remove_one(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell -= 1
     self.update_buttons()
 
@@ -136,6 +163,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='-5', style=discord.ButtonStyle.blurple)
   async def remove_five(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell -= 5
     self.update_buttons()
 
@@ -143,6 +173,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='-10', style=discord.ButtonStyle.blurple)
   async def remove_ten(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell -= 10
     self.update_buttons()
 
@@ -150,6 +183,9 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='-50', style=discord.ButtonStyle.blurple)
   async def remove_fifty(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell -= 50
     self.update_buttons()
 
@@ -157,22 +193,31 @@ class SellingView(ui.View):
 
   @discord.ui.button(label='-100', style=discord.ButtonStyle.blurple)
   async def remove_onehunge(self, interaction: discord.Interaction, button: ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell -= 100
     self.update_buttons()
 
     await self.create_embed(interaction)
 
   @discord.ui.button(label='all', style=discord.ButtonStyle.secondary)  # type: ignore
-  async def add_all(self, interaction: discord.Integration, button: discord.ui.Button):
+  async def add_all(self, interaction: discord.Interaction, button: discord.ui.Button):
+    if not await self.interaction_check(interaction):
+      return
+
     self.fish_to_sell = self.fish_data[1]
     self.update_buttons()
 
-    await self.create_embed(interaction)  # type: ignore
+    await self.create_embed(interaction)
 
   @discord.ui.button(label='sell', style=discord.ButtonStyle.green)
   async def finish_transaction(
     self, interaction: discord.Interaction, button: discord.ui.Button
   ):
+    if not await self.interaction_check(interaction):
+      return
+
     count = self.fish_data[1] - self.fish_to_sell
 
     self.bot.db.update_user_fish(self.member_id, self.guild_id, self.fishid, count)
@@ -208,6 +253,9 @@ class SellingView(ui.View):
   async def cancel_all(
     self, interaction: discord.Interaction, button: discord.ui.Button
   ):
+    if not await self.interaction_check(interaction):
+      return
+
     embed = discord.Embed(
       title='You leave the Fish MegaMart with nothing sold...',
       colour=discord.Colour.red(),
@@ -235,7 +283,7 @@ class FishingActions(commands.Cog):
     if fish == []:
       fish = [-1]
 
-    paginator = InventoryPaginator(data=fish, rod=rod)
+    paginator = InventoryPaginator(member_id=member_id, data=fish, rod=rod)
     first_page_entries = paginator.get_current_page_data()
     first_embed = await paginator.format_page(first_page_entries)
 
