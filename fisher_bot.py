@@ -3,7 +3,6 @@ from typing import Tuple
 import discord
 import os
 import sys
-import math
 import logging
 
 from discord.ext import commands

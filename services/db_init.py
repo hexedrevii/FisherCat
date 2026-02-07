@@ -93,6 +93,17 @@ def initialize_database(conn: sqlite3.Connection) -> bool:
     """)
 
     cursor.execute("""
+      CREATE TABLE IF NOT EXISTS memberrod (
+          guildid INTEGER NOT NULL,
+          memberid INTEGER NOT NULL,
+          rodid INTEGER NOT NULL,
+          PRIMARY KEY (guildid, memberid, rodid),
+          FOREIGN KEY (guildid, memberid) REFERENCES guildmember(guildid, memberid) ON DELETE CASCADE,
+          FOREIGN KEY (rodid) REFERENCES rod(id) ON DELETE CASCADE
+      );
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS guildmember (
             guildid INTEGER NOT NULL,
             memberid INTEGER NOT NULL,

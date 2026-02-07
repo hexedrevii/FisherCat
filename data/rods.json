@@ -11,6 +11,18 @@
       "max_catch": 5,
 
       "line_break_chance": 5
+    },
+    {"name": "Fibre-Optic Rod",
+      "description": "I sure love Fibre Glass!",
+
+      "value": 1000,
+      "level_required": 5,
+      "xp_multiplier": 1.15,
+
+      "min_catch": 1,
+      "max_catch": 7,
+
+      "line_break_chance": 3
     }
   ]
 }
